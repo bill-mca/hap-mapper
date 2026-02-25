@@ -140,3 +140,9 @@ vite.config.ts.timestamp-*
 
 # Tile directories (large binary data, not suitable for git)
 tiles/
+
+# Claude Code
+.claude/
+
+# Wrangler (contains auth credentials)
+.wrangler/
