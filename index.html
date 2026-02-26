@@ -64,7 +64,8 @@
 
         var imagery2025 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxZoom: 18
+            maxNativeZoom: 19,
+            maxZoom: 20
         });
 
         // Set default layer (start with 2025 imagery)
