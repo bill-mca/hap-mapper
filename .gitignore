@@ -146,3 +146,6 @@ tiles/
 
 # Wrangler (contains auth credentials)
 .wrangler/
+
+.dev.vars*
+!.dev.vars.example
