@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>HAP Mapper - North Canberra</title>
+    <title>Hap-Map - Time travel over North Canberra</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -24,16 +24,191 @@
     <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"
             charset="utf-8"></script>
 
-    <!-- Map Styling -->
     <style type="text/css">
+        :root {
+            --hap-navy: #16365c;
+            --hap-navy-light: #1f4d83;
+            --hap-accent: #f5a623;
+            --timeline-width: 86px;
+        }
+
         body {
             margin: 0;
             padding: 0;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
         }
 
         html, body, #map {
             width: 100%;
             height: 100%;
+        }
+
+        /* Crossfade between imagery years */
+        .year-pane {
+            transition: opacity 0.8s ease;
+        }
+
+        /* ---- Title card (top left, under zoom controls) ---- */
+        #title-card {
+            position: absolute;
+            top: 10px;
+            left: 54px;
+            z-index: 1000;
+            background: var(--hap-navy);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+        }
+
+        #title-card h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        #title-card p {
+            margin: 2px 0 0;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* ---- Timeline (right edge, topotijdreis style) ---- */
+        #timeline {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: var(--timeline-width);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.25);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #play-btn {
+            margin: 12px 0 8px;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: var(--hap-navy);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+            flex: none;
+        }
+
+        #play-btn:hover {
+            background: var(--hap-navy-light);
+        }
+
+        #track {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            margin-bottom: 18px;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        /* Central vertical line of the timeline */
+        #track::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            margin-left: -1px;
+            background: #c3cbd6;
+        }
+
+        .tick {
+            position: absolute;
+            left: 50%;
+            height: 1px;
+            background: #aab4c2;
+            transform: translateX(-50%);
+            width: 10px;
+        }
+
+        .tick.decade {
+            width: 18px;
+            height: 2px;
+            background: #6e7c8e;
+        }
+
+        .tick-label {
+            position: absolute;
+            left: 6px;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #54657c;
+        }
+
+        /* Dots marking years with available imagery */
+        .year-dot {
+            position: absolute;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--hap-accent);
+            border: 2px solid #fff;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* Draggable year handle */
+        #handle {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--hap-navy);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+            cursor: grab;
+            z-index: 3;
+            transition: top 0.25s ease;
+        }
+
+        #handle.dragging {
+            cursor: grabbing;
+            transition: none;
+            transform: translate(-50%, -50%) scale(1.12);
+        }
+
+        /* Keep Leaflet attribution clear of the timeline */
+        .leaflet-bottom.leaflet-right {
+            right: var(--timeline-width);
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --timeline-width: 64px;
+            }
+
+            #title-card h1 {
+                font-size: 13px;
+            }
+
+            #title-card p {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -42,46 +217,248 @@
     <!-- Map Container -->
     <div id="map"></div>
 
+    <!-- Title card -->
+    <div id="title-card">
+        <h1>Hap-Map</h1>
+        <p>Time travel over North Canberra</p>
+    </div>
+
+    <!-- Timeline (topotijdreis-style year slider) -->
+    <div id="timeline">
+        <button id="play-btn" title="Play through the years" aria-label="Play through the years">&#9654;</button>
+        <div id="track">
+            <div id="handle">1955</div>
+        </div>
+    </div>
+
     <script>
-        // Initialise map centred on Canberra city centre
-        // Coordinates: -35.2826°S, 149.119°E (Parliament House area)
+        // ------------------------------------------------------------------
+        // Map setup
+        // ------------------------------------------------------------------
         var canberraMap = L.map('map', {
-            attributionControl: false
+            attributionControl: false,
+            zoomControl: true
         }).setView([-35.2826, 149.119], 17);
 
-        // Add attribution control without Leaflet prefix
         L.control.attribution({
             prefix: false
         }).addTo(canberraMap);
 
-        // Define base layers for layer control
-        var imagery1955 = L.tileLayer('https://tiles.hapmap.app/north-canberra-1955/{z}/{x}/{y}.jpg', {
-            minZoom: 14,
-            maxZoom: 20,
-            tms: false,
-            attribution: '\&copy; cc-by Image data derived from Geoscience Australia\'s \<a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
+        // ------------------------------------------------------------------
+        // Imagery years. To add a new year of HAP imagery, append an entry
+        // here (keep the list sorted oldest -> newest). The newest year acts
+        // as the always-visible base layer; older years crossfade on top.
+        // ------------------------------------------------------------------
+        var IMAGERY_YEARS = [
+            {
+                year: 1955,
+                makeLayer: function (pane) {
+                    return L.tileLayer('https://tiles.hapmap.app/north-canberra-1955/{z}/{x}/{y}.jpg', {
+                        pane: pane,
+                        minZoom: 14,
+                        maxZoom: 20,
+                        tms: false,
+                        attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
+                    });
+                }
+            },
+            {
+                year: 2025,
+                makeLayer: function (pane) {
+                    return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        pane: pane,
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                        maxNativeZoom: 19,
+                        maxZoom: 20
+                    });
+                }
+            }
+        ];
+
+        // The newest year is the base layer in the default tile pane. Every
+        // older year gets its own pane stacked above so it can fade in/out.
+        IMAGERY_YEARS.forEach(function (entry, i) {
+            var isNewest = (i === IMAGERY_YEARS.length - 1);
+            var paneName;
+            if (isNewest) {
+                paneName = 'tilePane';
+            } else {
+                paneName = 'year-' + entry.year;
+                var pane = canberraMap.createPane(paneName);
+                pane.classList.add('year-pane');
+                pane.style.zIndex = 250 + i;
+                pane.style.opacity = 0;
+            }
+            entry.paneName = paneName;
+            entry.layer = entry.makeLayer(paneName).addTo(canberraMap);
         });
 
-        var imagery2025 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxNativeZoom: 19,
-            maxZoom: 20
+        // ------------------------------------------------------------------
+        // Timeline
+        // ------------------------------------------------------------------
+        var TIMELINE_MIN = 1950;
+        var TIMELINE_MAX = 2030;
+
+        var track = document.getElementById('track');
+        var handle = document.getElementById('handle');
+        var playBtn = document.getElementById('play-btn');
+
+        var activeYear = IMAGERY_YEARS[IMAGERY_YEARS.length - 1].year;
+
+        // Year <-> vertical position (newest at the top, like topotijdreis)
+        function yearToPercent(year) {
+            return (TIMELINE_MAX - year) / (TIMELINE_MAX - TIMELINE_MIN) * 100;
+        }
+
+        function offsetToYear(offsetY) {
+            var rect = track.getBoundingClientRect();
+            var fraction = Math.min(1, Math.max(0, (offsetY - rect.top) / rect.height));
+            return TIMELINE_MAX - fraction * (TIMELINE_MAX - TIMELINE_MIN);
+        }
+
+        function nearestImageryYear(year) {
+            var best = IMAGERY_YEARS[0];
+            IMAGERY_YEARS.forEach(function (entry) {
+                if (Math.abs(entry.year - year) < Math.abs(best.year - year)) {
+                    best = entry;
+                }
+            });
+            return best.year;
+        }
+
+        // Build tick marks (yearly minor ticks, labelled decade ticks)
+        for (var y = TIMELINE_MIN; y <= TIMELINE_MAX; y++) {
+            var tick = document.createElement('div');
+            tick.className = 'tick' + (y % 10 === 0 ? ' decade' : '');
+            tick.style.top = yearToPercent(y) + '%';
+            track.appendChild(tick);
+
+            if (y % 10 === 0) {
+                var label = document.createElement('div');
+                label.className = 'tick-label';
+                label.textContent = y;
+                label.style.top = yearToPercent(y) + '%';
+                track.appendChild(label);
+            }
+        }
+
+        // Dots for years with available imagery
+        IMAGERY_YEARS.forEach(function (entry) {
+            var dot = document.createElement('div');
+            dot.className = 'year-dot';
+            dot.title = String(entry.year);
+            dot.style.top = yearToPercent(entry.year) + '%';
+            dot.addEventListener('click', function (e) {
+                e.stopPropagation();
+                setYear(entry.year);
+            });
+            track.appendChild(dot);
         });
 
-        // Set default layer (start with 2025 imagery)
-        imagery2025.addTo(canberraMap);
+        function updateHandle(year) {
+            handle.style.top = yearToPercent(year) + '%';
+            handle.textContent = Math.round(year);
+        }
 
-        // Create layer control
-        var baseMaps = {
-            "2025 (Current Satellite)": imagery2025,
-            "1955 (Historical Imagery)": imagery1955
-        };
+        // Switch the visible imagery by fading panes
+        function applyImagery(year) {
+            IMAGERY_YEARS.forEach(function (entry) {
+                if (entry.paneName === 'tilePane') return; // base, always visible
+                canberraMap.getPane(entry.paneName).style.opacity =
+                    (entry.year === year) ? 1 : 0;
+            });
+        }
 
-        // Add layer control to map (collapsed: false means open by default)
-        L.control.layers(baseMaps, null, {collapsed: false}).addTo(canberraMap);
+        function setYear(year) {
+            activeYear = nearestImageryYear(year);
+            applyImagery(activeYear);
+            updateHandle(activeYear);
+        }
 
-        // Add Leaflet.Locate control for geolocation
-        var locateControl = L.control.locate({
+        // Dragging: handle follows the pointer, imagery switches to the
+        // nearest available year live, and the handle snaps on release.
+        var dragging = false;
+
+        function onPointerMove(e) {
+            if (!dragging) return;
+            var year = offsetToYear(e.clientY);
+            updateHandle(year);
+            var nearest = nearestImageryYear(year);
+            if (nearest !== activeYear) {
+                activeYear = nearest;
+                applyImagery(activeYear);
+            }
+        }
+
+        function onPointerUp() {
+            if (!dragging) return;
+            dragging = false;
+            handle.classList.remove('dragging');
+            setYear(activeYear);
+        }
+
+        track.addEventListener('pointerdown', function (e) {
+            stopPlayback();
+            dragging = true;
+            handle.classList.add('dragging');
+            track.setPointerCapture(e.pointerId);
+            onPointerMove(e);
+        });
+        track.addEventListener('pointermove', onPointerMove);
+        track.addEventListener('pointerup', onPointerUp);
+        track.addEventListener('pointercancel', onPointerUp);
+
+        // Keyboard: step between available imagery years
+        document.addEventListener('keydown', function (e) {
+            var idx = IMAGERY_YEARS.findIndex(function (entry) {
+                return entry.year === activeYear;
+            });
+            if (e.key === 'ArrowUp' && idx < IMAGERY_YEARS.length - 1) {
+                setYear(IMAGERY_YEARS[idx + 1].year);
+            } else if (e.key === 'ArrowDown' && idx > 0) {
+                setYear(IMAGERY_YEARS[idx - 1].year);
+            }
+        });
+
+        // ------------------------------------------------------------------
+        // Playback: animate through the available years
+        // ------------------------------------------------------------------
+        var playTimer = null;
+
+        function stopPlayback() {
+            if (playTimer !== null) {
+                clearInterval(playTimer);
+                playTimer = null;
+                playBtn.innerHTML = '&#9654;';
+                playBtn.title = 'Play through the years';
+            }
+        }
+
+        playBtn.addEventListener('click', function () {
+            if (playTimer !== null) {
+                stopPlayback();
+                return;
+            }
+            playBtn.innerHTML = '&#10074;&#10074;';
+            playBtn.title = 'Pause';
+            // Start from the oldest year, then step forward on each tick
+            setYear(IMAGERY_YEARS[0].year);
+            playTimer = setInterval(function () {
+                var idx = IMAGERY_YEARS.findIndex(function (entry) {
+                    return entry.year === activeYear;
+                });
+                var next = (idx + 1) % IMAGERY_YEARS.length;
+                setYear(IMAGERY_YEARS[next].year);
+            }, 2500);
+        });
+
+        // Start on the oldest imagery so the "time travel" is obvious
+        setYear(IMAGERY_YEARS[0].year);
+
+        // ------------------------------------------------------------------
+        // Locate control
+        // ------------------------------------------------------------------
+        L.control.locate({
             position: 'topleft',
             strings: {
                 title: "Show me where I am"
