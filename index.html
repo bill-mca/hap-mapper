@@ -5,29 +5,12 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-          integrity="sha384-o/2yZuJZWGJ4s/adjxVW71R+EO/LyCwdQfP5UWSgX/w87iiTXuvDZaejd3TsN7mf"
-          crossorigin=""/>
-
-    <!-- Leaflet.Locate Plugin CSS -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css" />
-
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-            integrity="sha384-okbbMvvx/qfQkmiQKfd5VifbKZ/W8p1qIsWvE1ROPUfHWsDcC8/BnHohF7vPg2T6"
-            crossorigin=""></script>
-
-    <!-- Leaflet.Locate Plugin JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"
-            charset="utf-8"></script>
-
-    <!-- georaster + georaster-layer-for-leaflet: render the 1955 Cloud-Optimized
-         GeoTIFF client-side (streams overviews via HTTP range requests) -->
-    <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
-    <script src="https://unpkg.com/georaster-layer-for-leaflet@4.1.2/dist/georaster-layer-for-leaflet.min.js"></script>
+    <!-- MapLibre GL CSS/JS. MapLibre is a WebGL map engine; unlike Leaflet it
+         renders rasters on the GPU, which lets the 1955 Cloud-Optimized GeoTIFF
+         be reprojected (UTM 55S -> Web Mercator) on the fly without choking the
+         main thread, and gives smooth raster-opacity crossfades for free. -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
     <style type="text/css">
         :root {
@@ -48,17 +31,16 @@
             height: 100%;
         }
 
-        /* Crossfade between imagery years */
-        .year-pane {
-            transition: opacity 0.8s ease;
+        #map {
+            background: #0b1622;
         }
 
-        /* ---- Title card (top left, under zoom controls) ---- */
+        /* ---- Title card (top left, under the nav controls) ---- */
         #title-card {
             position: absolute;
             top: 10px;
             left: 54px;
-            z-index: 1000;
+            z-index: 5;
             background: var(--hap-navy);
             color: #fff;
             padding: 8px 14px;
@@ -87,7 +69,7 @@
             right: 0;
             bottom: 0;
             width: var(--timeline-width);
-            z-index: 1000;
+            z-index: 5;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -197,8 +179,8 @@
             transform: translate(-50%, -50%) scale(1.12);
         }
 
-        /* Keep Leaflet attribution clear of the timeline */
-        .leaflet-bottom.leaflet-right {
+        /* Keep MapLibre attribution clear of the timeline */
+        .maplibregl-ctrl-bottom-right {
             right: var(--timeline-width);
         }
 
@@ -236,90 +218,121 @@
         </div>
     </div>
 
-    <script>
-        // ------------------------------------------------------------------
-        // Map setup
-        // ------------------------------------------------------------------
-        var canberraMap = L.map('map', {
-            attributionControl: false,
-            zoomControl: true
-        }).setView([-35.2826, 149.119], 17);
+    <script type="module">
+        // The COG protocol is ESM; esm.sh resolves its bundled deps (geotiff,
+        // d3-scale, sphericalmercator) into a browser-ready module so the site
+        // keeps its no-build-step setup.
+        import { cogProtocol, setColorFunction }
+            from 'https://esm.sh/@geomatico/maplibre-cog-protocol@0.9.0';
 
-        L.control.attribution({
-            prefix: false
-        }).addTo(canberraMap);
+        // Teach MapLibre how to fetch `cog://` raster tiles.
+        maplibregl.addProtocol('cog', cogProtocol);
+
+        // ------------------------------------------------------------------
+        // Map setup. MapLibre zoom is ~1 level "tighter" than Leaflet's, so
+        // zoom 16 here matches the old Leaflet view at zoom 17.
+        // ------------------------------------------------------------------
+        var canberraMap = new maplibregl.Map({
+            container: 'map',
+            center: [149.119, -35.2826],
+            zoom: 16,
+            maxZoom: 21,
+            attributionControl: false,
+            style: {
+                version: 8,
+                sources: {},
+                layers: [
+                    { id: 'background', type: 'background', paint: { 'background-color': '#0b1622' } }
+                ]
+            }
+        });
+
+        canberraMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+        canberraMap.addControl(new maplibregl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            fitBoundsOptions: { maxZoom: 15 }
+        }), 'top-left');
+        canberraMap.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
 
         // ------------------------------------------------------------------
         // Imagery years. To add a new year of HAP imagery, append an entry
-        // here (keep the list sorted oldest -> newest). The newest year acts
-        // as the always-visible base layer; older years crossfade on top.
+        // here (keep the list sorted oldest -> newest). The newest year is the
+        // always-visible base layer; older years crossfade on top of it.
         // ------------------------------------------------------------------
+        var COG_1955 = 'https://tiles.hapmap.app/cog/north-canberra-1955-cac80-large.tif';
+
+        // The 1955 COG is panchromatic with two bands: band 1 = luminance,
+        // band 2 = alpha mask. Paint it grey, honouring the alpha so the
+        // mosaic's ragged edges stay transparent. Runs once per pixel — fast.
+        setColorFunction(COG_1955, function (pixel, color, metadata) {
+            var lum = pixel[0];
+            var alpha = pixel[1];
+            if (alpha === 0 || lum === metadata.noData || lum === null || isNaN(lum)) {
+                color.set([0, 0, 0, 0]);
+            } else {
+                color.set([lum, lum, lum, alpha === undefined ? 255 : alpha]);
+            }
+        });
+
         var IMAGERY_YEARS = [
             {
                 year: 1955,
-                // The 1955 imagery is a Cloud-Optimized GeoTIFF orthomosaic
-                // (UTM zone 55S, panchromatic: band 1 = luminance, band 2 =
-                // alpha mask). It is rendered client-side by georaster, which
-                // streams the COG's internal overviews via HTTP range requests
-                // and reprojects to Web Mercator on the fly. parseGeoraster is
-                // async, so makeLayer returns an empty group up front and adds
-                // the raster layer to it once the COG header has been read.
-                makeLayer: function (pane) {
-                    var group = L.layerGroup([], { pane: pane });
-                    var cogUrl = 'https://tiles.hapmap.app/cog/north-canberra-1955-cac80-large.tif';
-                    parseGeoraster(cogUrl).then(function (georaster) {
-                        var cog = new GeoRasterLayer({
-                            georaster: georaster,
-                            pane: pane,
-                            resolution: 256,
-                            attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>',
-                            // Render the single luminance band as grey, using the
-                            // alpha band to keep the mosaic's ragged edges clear.
-                            pixelValuesToColorFn: function (values) {
-                                var lum = values[0];
-                                var alpha = values[1];
-                                if (alpha === 0 || lum === null || lum === undefined || isNaN(lum)) {
-                                    return null;
-                                }
-                                return 'rgb(' + lum + ',' + lum + ',' + lum + ')';
-                            }
-                        });
-                        group.addLayer(cog);
-                    }).catch(function (err) {
-                        console.error('Failed to load 1955 COG layer:', err);
+                layerId: 'imagery-1955',
+                addSource: function (map) {
+                    map.addSource('imagery-1955', {
+                        type: 'raster',
+                        url: 'cog://' + COG_1955,
+                        tileSize: 256,
+                        attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
                     });
-                    return group;
                 }
             },
             {
                 year: 2025,
-                makeLayer: function (pane) {
-                    return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        pane: pane,
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                        maxNativeZoom: 19,
-                        maxZoom: 20
+                layerId: 'imagery-2025',
+                addSource: function (map) {
+                    map.addSource('imagery-2025', {
+                        type: 'raster',
+                        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                        tileSize: 256,
+                        maxzoom: 19,
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
                     });
                 }
             }
         ];
 
-        // The newest year is the base layer in the default tile pane. Every
-        // older year gets its own pane stacked above so it can fade in/out.
-        IMAGERY_YEARS.forEach(function (entry, i) {
-            var isNewest = (i === IMAGERY_YEARS.length - 1);
-            var paneName;
-            if (isNewest) {
-                paneName = 'tilePane';
-            } else {
-                paneName = 'year-' + entry.year;
-                var pane = canberraMap.createPane(paneName);
-                pane.classList.add('year-pane');
-                pane.style.zIndex = 250 + i;
-                pane.style.opacity = 0;
-            }
-            entry.paneName = paneName;
-            entry.layer = entry.makeLayer(paneName).addTo(canberraMap);
+        var BASE = IMAGERY_YEARS[IMAGERY_YEARS.length - 1]; // newest year
+
+        // Add the base layer first (bottom of the stack), then the older years
+        // above it so they can fade in/out over the base. Each older raster
+        // layer starts fully transparent.
+        canberraMap.on('load', function () {
+            BASE.addSource(canberraMap);
+            canberraMap.addLayer({
+                id: BASE.layerId,
+                type: 'raster',
+                source: BASE.layerId,
+                paint: { 'raster-opacity': 1 }
+            });
+
+            IMAGERY_YEARS.forEach(function (entry) {
+                if (entry === BASE) return;
+                entry.addSource(canberraMap);
+                canberraMap.addLayer({
+                    id: entry.layerId,
+                    type: 'raster',
+                    source: entry.layerId,
+                    paint: {
+                        'raster-opacity': 0,
+                        'raster-opacity-transition': { duration: 800, delay: 0 }
+                    }
+                });
+            });
+
+            // Start on the oldest imagery so the "time travel" is obvious.
+            setYear(IMAGERY_YEARS[0].year);
         });
 
         // ------------------------------------------------------------------
@@ -332,7 +345,7 @@
         var handle = document.getElementById('handle');
         var playBtn = document.getElementById('play-btn');
 
-        var activeYear = IMAGERY_YEARS[IMAGERY_YEARS.length - 1].year;
+        var activeYear = BASE.year;
 
         // Year <-> vertical position (newest at the top, like topotijdreis)
         function yearToPercent(year) {
@@ -389,12 +402,14 @@
             handle.textContent = Math.round(year);
         }
 
-        // Switch the visible imagery by fading panes
+        // Switch the visible imagery by fading raster layers. The base (newest)
+        // year always stays fully opaque underneath.
         function applyImagery(year) {
+            if (!canberraMap.isStyleLoaded()) return;
             IMAGERY_YEARS.forEach(function (entry) {
-                if (entry.paneName === 'tilePane') return; // base, always visible
-                canberraMap.getPane(entry.paneName).style.opacity =
-                    (entry.year === year) ? 1 : 0;
+                if (entry === BASE) return;
+                canberraMap.setPaintProperty(
+                    entry.layerId, 'raster-opacity', (entry.year === year) ? 1 : 0);
             });
         }
 
@@ -481,27 +496,8 @@
             }, 2500);
         });
 
-        // Start on the oldest imagery so the "time travel" is obvious
-        setYear(IMAGERY_YEARS[0].year);
-
-        // ------------------------------------------------------------------
-        // Locate control
-        // ------------------------------------------------------------------
-        L.control.locate({
-            position: 'topleft',
-            strings: {
-                title: "Show me where I am"
-            },
-            flyTo: true,
-            cacheLocation: true,
-            setView: 'untilPanOrZoom',
-            keepCurrentZoomLevel: false,
-            locateOptions: {
-                maxZoom: 16,
-                watch: true,
-                enableHighAccuracy: true
-            }
-        }).addTo(canberraMap);
+        // Reflect the starting handle position before the map finishes loading.
+        updateHandle(IMAGERY_YEARS[0].year);
     </script>
 </body>
 </html>
