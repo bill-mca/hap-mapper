@@ -24,6 +24,11 @@
     <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"
             charset="utf-8"></script>
 
+    <!-- georaster + georaster-layer-for-leaflet: render the 1955 Cloud-Optimized
+         GeoTIFF client-side (streams overviews via HTTP range requests) -->
+    <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+    <script src="https://unpkg.com/georaster-layer-for-leaflet@4.1.2/dist/georaster-layer-for-leaflet.min.js"></script>
+
     <style type="text/css">
         :root {
             --hap-navy: #16365c;
@@ -252,14 +257,38 @@
         var IMAGERY_YEARS = [
             {
                 year: 1955,
+                // The 1955 imagery is a Cloud-Optimized GeoTIFF orthomosaic
+                // (UTM zone 55S, panchromatic: band 1 = luminance, band 2 =
+                // alpha mask). It is rendered client-side by georaster, which
+                // streams the COG's internal overviews via HTTP range requests
+                // and reprojects to Web Mercator on the fly. parseGeoraster is
+                // async, so makeLayer returns an empty group up front and adds
+                // the raster layer to it once the COG header has been read.
                 makeLayer: function (pane) {
-                    return L.tileLayer('https://tiles.hapmap.app/north-canberra-1955/{z}/{x}/{y}.jpg', {
-                        pane: pane,
-                        minZoom: 14,
-                        maxZoom: 20,
-                        tms: false,
-                        attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
+                    var group = L.layerGroup([], { pane: pane });
+                    var cogUrl = 'https://tiles.hapmap.app/cog/north-canberra-1955-cac80-large.tif';
+                    parseGeoraster(cogUrl).then(function (georaster) {
+                        var cog = new GeoRasterLayer({
+                            georaster: georaster,
+                            pane: pane,
+                            resolution: 256,
+                            attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>',
+                            // Render the single luminance band as grey, using the
+                            // alpha band to keep the mosaic's ragged edges clear.
+                            pixelValuesToColorFn: function (values) {
+                                var lum = values[0];
+                                var alpha = values[1];
+                                if (alpha === 0 || lum === null || lum === undefined || isNaN(lum)) {
+                                    return null;
+                                }
+                                return 'rgb(' + lum + ',' + lum + ',' + lum + ')';
+                            }
+                        });
+                        group.addLayer(cog);
+                    }).catch(function (err) {
+                        console.error('Failed to load 1955 COG layer:', err);
                     });
+                    return group;
                 }
             },
             {
