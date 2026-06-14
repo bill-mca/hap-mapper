@@ -1,0 +1,6 @@
+# Allowlist approach: ignore everything, then re-include only the static site.
+# Wrangler 4.x uploads dotfiles by default, so an explicit allowlist is the
+# only safe way to keep .git/, .wrangler/, .claude/ etc. out of public assets.
+# The 1955 tile pyramid is served from R2 via tiles.hapmap.app, not bundled.
+*
+!index.html
