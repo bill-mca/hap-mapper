@@ -146,3 +146,8 @@ tiles/
 
 # Wrangler (contains auth credentials)
 .wrangler/
+
+# Local dev/staging deployment scaffolding (hapmap-dev on *.workers.dev) — kept
+# local for perf testing, not part of the production build.
+dev/
+wrangler.dev.jsonc

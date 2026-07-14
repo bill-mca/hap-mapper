@@ -1,11 +1,24 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hapmap",
+  "main": "worker/cog-proxy.js",
   "compatibility_date": "2025-09-27",
   "observability": {
     "enabled": true
   },
+  // Static site is index.html only (see .assetsignore). Assets are matched
+  // first, so `/` serves index.html and only /cog/* falls through to the
+  // Worker, which range-proxies the COG out of R2 with proper 206 responses
+  // (Cloudflare's 512 MB cache limit denies ranges for the 2.3 GB COG on a
+  // custom domain). Same origin as the page, so no CORS is needed.
   "assets": {
-    "directory": "."
-  }
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "hap-mapper-tiles"
+    }
+  ]
 }

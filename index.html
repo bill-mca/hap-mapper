@@ -260,7 +260,12 @@
         // here (keep the list sorted oldest -> newest). The newest year is the
         // always-visible base layer; older years crossfade on top of it.
         // ------------------------------------------------------------------
-        var COG_1955 = 'https://tiles.hapmap.app/cog/north-canberra-1955-cac80-large.tif';
+        // Same-origin: this Worker range-proxies the COG out of R2 (see
+        // worker/cog-proxy.js), returning proper 206s that Cloudflare's 512 MB
+        // cache limit would otherwise deny for a 2.3 GB object on a custom
+        // domain. The COG is reprojected to EPSG:3857 — maplibre-cog-protocol
+        // only renders Web Mercator COGs, not the source UTM 55S.
+        var COG_1955 = location.origin + '/cog/north-canberra-1955-odm-3857.tif';
 
         // The 1955 COG is panchromatic with two bands: band 1 = luminance,
         // band 2 = alpha mask. Paint it grey, honouring the alpha so the
