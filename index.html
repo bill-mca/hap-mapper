@@ -56,12 +56,6 @@
             letter-spacing: 0.3px;
         }
 
-        #title-card p {
-            margin: 2px 0 0;
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
         /* ---- Timeline (right edge, topotijdreis style) ---- */
         #timeline {
             position: absolute;
@@ -192,10 +186,6 @@
             #title-card h1 {
                 font-size: 13px;
             }
-
-            #title-card p {
-                display: none;
-            }
         }
     </style>
 </head>
@@ -207,7 +197,6 @@
     <!-- Title card -->
     <div id="title-card">
         <h1>Hap-Map</h1>
-        <p>Time travel over North Canberra</p>
     </div>
 
     <!-- Timeline (topotijdreis-style year slider) -->
@@ -234,8 +223,11 @@
         // ------------------------------------------------------------------
         var canberraMap = new maplibregl.Map({
             container: 'map',
-            center: [149.119, -35.2826],
-            zoom: 16,
+            // Default view: all of Lake Burley Griffin, Scrivener Dam to the
+            // Molonglo Reach (bbox via Nominatim), padded so the shoreline
+            // isn't flush against the edges.
+            bounds: [[149.0712015, -35.3140388], [149.1567188, -35.2841504]],
+            fitBoundsOptions: { padding: 40 },
             maxZoom: 21,
             attributionControl: false,
             style: {
@@ -280,6 +272,14 @@
             }
         });
 
+        // 1980 is a standard 3-band RGB COG (colour restitution from
+        // SOC276/277, ZoomF=2 MicMac run), so maplibre-cog-protocol renders
+        // it from its own PhotometricInterpretation tag — no setColorFunction
+        // needed. Covers the north/east side of the city (Reid, Russell,
+        // Kingston, Fyshwick, Narrabundah); doesn't reach the lake's south
+        // shore or Scrivener Dam, which is the extent of the source imagery.
+        var COG_1980 = location.origin + '/cog/canberra-1980-soc276-3857.tif';
+
         var IMAGERY_YEARS = [
             {
                 year: 1955,
@@ -290,6 +290,18 @@
                         url: 'cog://' + COG_1955,
                         tileSize: 256,
                         attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
+                    });
+                }
+            },
+            {
+                year: 1980,
+                layerId: 'imagery-1980',
+                addSource: function (map) {
+                    map.addSource('imagery-1980', {
+                        type: 'raster',
+                        url: 'cog://' + COG_1980,
+                        tileSize: 256,
+                        attribution: '&copy; Hap-Map project &mdash; SOC276/277 aerial survey, restituted via MicMac'
                     });
                 }
             },
@@ -410,7 +422,6 @@
         // Switch the visible imagery by fading raster layers. The base (newest)
         // year always stays fully opaque underneath.
         function applyImagery(year) {
-            if (!canberraMap.isStyleLoaded()) return;
             IMAGERY_YEARS.forEach(function (entry) {
                 if (entry === BASE) return;
                 canberraMap.setPaintProperty(
