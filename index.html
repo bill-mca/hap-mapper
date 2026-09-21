@@ -254,14 +254,19 @@
         // ------------------------------------------------------------------
         // Same-origin: this Worker range-proxies the COG out of R2 (see
         // worker/cog-proxy.js), returning proper 206s that Cloudflare's 512 MB
-        // cache limit would otherwise deny for a 2.3 GB object on a custom
+        // cache limit would otherwise deny for a 14 GB object on a custom
         // domain. The COG is reprojected to EPSG:3857 — maplibre-cog-protocol
-        // only renders Web Mercator COGs, not the source UTM 55S.
-        var COG_1955 = location.origin + '/cog/north-canberra-1955-odm-3857.tif';
+        // only renders Web Mercator COGs, not the source GDA2020/MGA55.
+        // This is the complete 239-frame CAC80-81-88 1955 campaign mosaic
+        // (MicMac, restituted on Gadi), covering far more of the 1955
+        // extent than the earlier ODM-derived north-Canberra-only COG it
+        // replaces.
+        var COG_1955 = location.origin + '/cog/north-canberra-1955-cac80-3857.tif';
 
-        // The 1955 COG is panchromatic with two bands: band 1 = luminance,
-        // band 2 = alpha mask. Paint it grey, honouring the alpha so the
-        // mosaic's ragged edges stay transparent. Runs once per pixel — fast.
+        // The 1955 COG is panchromatic, single-band (MicMac's Tawny stage
+        // never emits an alpha band). NoData=0 marks the mosaic's ragged
+        // edges/gaps, so `pixel[1]` (alpha) is always undefined here and the
+        // noData check alone drives transparency. Runs once per pixel — fast.
         setColorFunction(COG_1955, function (pixel, color, metadata) {
             var lum = pixel[0];
             var alpha = pixel[1];
