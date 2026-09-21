@@ -203,7 +203,7 @@
     <div id="timeline">
         <button id="play-btn" title="Play through the years" aria-label="Play through the years">&#9654;</button>
         <div id="track">
-            <div id="handle">1955</div>
+            <div id="handle">2025</div>
         </div>
     </div>
 
@@ -348,8 +348,9 @@
                 });
             });
 
-            // Start on the oldest imagery so the "time travel" is obvious.
-            setYear(IMAGERY_YEARS[0].year);
+            // Start on the newest (base) imagery; the timeline lets people
+            // travel back from the present rather than opening in the past.
+            setYear(BASE.year);
         });
 
         // ------------------------------------------------------------------
@@ -513,7 +514,7 @@
         });
 
         // Reflect the starting handle position before the map finishes loading.
-        updateHandle(IMAGERY_YEARS[0].year);
+        updateHandle(BASE.year);
     </script>
 </body>
 </html>
