@@ -293,7 +293,11 @@
                     map.addSource('imagery-1955', {
                         type: 'raster',
                         url: 'cog://' + COG_1955,
-                        tileSize: 256,
+                        // Must match the COG's internal block size (512x512):
+                        // a mismatched tileSize forces the protocol to
+                        // decode a full 512x512 block per requested 256x256
+                        // tile, quadrupling client-side decode work.
+                        tileSize: 512,
                         attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
                     });
                 }
@@ -305,7 +309,7 @@
                     map.addSource('imagery-1980', {
                         type: 'raster',
                         url: 'cog://' + COG_1980,
-                        tileSize: 256,
+                        tileSize: 512, // matches this COG's internal block size — see imagery-1955
                         attribution: '&copy; Hap-Map project &mdash; SOC276/277 aerial survey, restituted via MicMac'
                     });
                 }
