@@ -19,13 +19,16 @@ The design is in [docs/stac-plan.md](docs/stac-plan.md).
 The catalog itself lives in `~/hap-mosaics` on hectar.
 
 - [x] Catalog every mosaic in `~/hap-mosaics` as STAC, with a builder and a readable index.
-- [ ] Make `hap-mosaics` a Gitea repository, add the 1968 mosaic, and drop `hap:hapmap.sites`.
-- [ ] blag-map B51 and B52: keep tie-point residuals and GFIDs; nearest-neighbour overviews for `source_frame.tif`.
-- [ ] Add the original-grid Blag Map mosaics with `source_frame`, `overlap_count`, `frame_fit` and `tie_points`, and generate the frame records.
-- [ ] A publish script on hectar: upload what is missing, write the web catalog, report orphans, never delete.
-- [ ] `layers.yaml`, a build step that turns it into the timeline, a `dev` branch, and a Gitea remote.
-- [ ] The click popup: frame, date, link to its record, and the tie-point view.
-- [ ] Publish the catalog to `stac/` on R2, then STAC Browser at `/browse/`.
+- [x] Make `hap-mosaics` a Gitea repository, add the 1968 mosaic, and drop `hap:hapmap.sites`.
+- [x] blag-map B51 and B52: keep tie-point residuals and GFIDs; nearest-neighbour overviews for `source_frame.tif`.
+- [x] Add the original-grid Blag Map mosaics with `source_frame`, `overlap_count`, `frame_fit` and `tie_points`, and generate the frame records.
+- [x] A publish script on hectar: upload what is missing, write the web catalog, report orphans, never delete.
+- [x] `layers.yaml`, a build step that turns it into the timeline, a `dev` branch, and a Gitea remote.
+- [x] The click popup: frame, date, link to its record, and the tie-point view.
+- [x] Publish the catalog to `stac/` on R2, then STAC Browser at `/browse/`.
+- [ ] Re-run the 1980 mosaic with today's Blag Map, so its `source_frame` is exact past frame 254 (now reconstructed by nearest camera nadir).
+- [ ] Separate the 1944 and 1945 dots on the timeline: they overlap, so a click on 1944 lands on 1945.
+- [ ] Deploy `dev` to `hapmap-dev`, retiring the old gitignored `dev/index.html` and its ACTmapi evaluation layers once bilby has finished with them.
 
 ## Later
 

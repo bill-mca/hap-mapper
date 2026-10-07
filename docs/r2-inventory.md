@@ -7,13 +7,17 @@ Update it whenever an object is added, replaced or deleted, in the same commit a
 
 Last checked: 7 October 2026, by listing the bucket with `rclone lsl gudgenby-r2:hap-mapper-tiles` and loading every layer of both deployed pages in a headless browser.
 
+Since the evening of 7 October the bucket is kept by `publish.py` in the hap-mosaics repository (`~/hap-mosaics/metadata/`), which uploads whatever `mosaics.yaml` marks for publishing, writes the public STAC catalog under `stac/`, and lists any object nothing refers to.
+It never overwrites a key or deletes anything.
+The hap-mosaics catalog is now the full record of what each object is; this register keeps the history and the reasoning.
+
 ## How the site reads the bucket
 
-Both Workers bind the bucket as `BUCKET` and serve COGs from it same-origin at `/cog/<key>`, through the range proxy in `worker/cog-proxy.js`.
+Both Workers bind the bucket as `BUCKET` and serve any key same-origin at `/<key>`, through the range proxy in `worker/cog-proxy.js`: the COGs at `/cog/…` and the catalog at `/stac/…`.
 The proxy exists because Cloudflare will not serve byte ranges for objects over 512 MB from a custom domain.
 
-- **Production** is the `hapmap` Worker (`wrangler.jsonc`), serving `index.html`.
-- **Dev** is the `hapmap-dev` Worker (`wrangler.dev.jsonc`) at `https://hapmap-dev.u5007063.workers.dev`, serving `dev/index.html`. Both files are gitignored. Dev shows the same R2 layers as production, plus ACTmapi layers that are not in the bucket.
+- **Production** is the `hapmap` Worker (`wrangler.jsonc`), serving the built `dist/` from the `main` branch (or, on 7 October, from `feat/stac-catalog`).
+- **Dev** is the `hapmap-dev` Worker, now `wrangler.jsonc`'s `dev` environment, built from the `dev` branch. Until it is next deployed it still serves the old gitignored `dev/index.html` from `wrangler.dev.jsonc`, with ACTmapi layers that are not in the bucket.
 
 Both were deployed on 7 October 2026.
 
@@ -40,6 +44,22 @@ Sizes are in decimal gigabytes.
 
 Every object is an EPSG:3857 COG with 512 px blocks, DEFLATE compression and internal overviews.
 Edges are transparent through NoData=0 in the grey files and through an alpha band in the colour ones.
+
+### Added for the STAC catalog and the click popup (7 October 2026)
+
+`publish.py` added 24 objects, 2.40 GB, for the six Blag Map mosaics:
+
+| key pattern | what | total |
+|---|---|---|
+| `cog/<mosaic>-blag-7855.tif` | each mosaic on its own grid (GDA2020 / MGA 55), as a COG, for GIS users | 2.33 GB |
+| `cog/<mosaic>-blag-7855-source-frame.tif` | which photograph made each pixel (16-bit, nearest-neighbour overviews) | 23 MB |
+| `cog/<mosaic>-blag-7855-overlap-count.tif` | how many photographs cover each pixel | 19 MB |
+| `cog/<mosaic>-blag-3857-source-frame.tif` | the same labels in Web Mercator, read one pixel at a time by the map's click | 24 MB |
+
+It also wrote the public STAC catalog under `stac/`: 3,769 files, 326 MB, with every mosaic on the site, the six above, a record for each of the 1,857 photographs they use (`stac/ga-frames/<GFID>.json`), each mosaic's `frame_fit.json` and `tie_points.parquet`, and each photograph's tie points (`stac/<collection>/<mosaic>-blag-7855/ties/<GFID>.json`).
+The tie points are most of it: 154 MB as GeoParquet and 164 MB split by photograph, about 90 KB each, far more than the plan's guess of 5–10 KB, because the matcher keeps two thousand points a frame.
+
+The SOC195 1980 COG is still published, since the plan keeps it until a full-scan Blag Map 1980 replaces it, so `publish.py` does not count it an orphan.
 
 ## How Blag Map georeferences
 
