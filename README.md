@@ -5,7 +5,7 @@ the Hap-Map project, showing historical aerial photography of North Canberra.
 
 Drag the year handle on the timeline (or press the play button) to crossfade
 between imagery years. Years with available imagery are marked with orange
-dots on the timeline; currently 1926, 1944, 1945, 1955, 1974–75, 1980 and
+dots on the timeline; currently 1926, 1944, 1945, 1955, 1968, 1974–75, 1980 and
 2025 (Esri World Imagery). 1955 is the complete CAC80-81-88 campaign,
 restituted with MicMac; the others are Blag Map
 mosaics of Geoscience Australia's historical aerial photography.

@@ -24,13 +24,14 @@ The bucket's public `r2.dev` URL is off.
 
 ## The bucket today
 
-The bucket holds 24.2 GB in 7 objects.
+The bucket holds 25.3 GB in 8 objects.
 Sizes are in decimal gigabytes.
 
 | key | year | size | uploaded | shown on |
 |---|---|---|---|---|
 | `cog/north-canberra-1955-cac80-3857.tif` | 1955 | 14.36 GB | 2026-09-21 | prod and dev |
 | `cog/canberra-1980-soc195-3857.tif` | 1980 | 8.60 GB | 2026-09-29 | nothing; kept until a full-scan Blag Map 1980 replaces it |
+| `cog/act-1968-cacc4-c15-blag-3857.tif` | 1968 | 1.11 GB | 2026-10-07 | prod and dev |
 | `cog/canberra-1980-soc276-279-blag-3857.tif` | 1980 | 0.52 GB | 2026-10-07 | prod and dev |
 | `cog/canberra-1945-map1537-blag-3857.tif` | 1945 | 0.37 GB | 2026-10-07 | prod and dev |
 | `cog/act-1974-75-cas896-920-blag-3857.tif` | 1974–75 | 0.18 GB | 2026-10-07 | prod and dev |
@@ -42,7 +43,7 @@ Edges are transparent through NoData=0 in the grey files and through an alpha ba
 
 ## How Blag Map georeferences
 
-Five of the files come from Blag Map (`~/repos/blag-map`), so its method is described once here.
+Six of the files come from Blag Map (`~/repos/blag-map`), so its method is described once here.
 Blag Map matches each frame against a reference image to find where it lies.
 It then solves the frame's camera against the Copernicus GLO-30 terrain model and orthorectifies the frame through that camera.
 Nothing is placed by hand.
@@ -99,6 +100,21 @@ Source: `~/repos/blag-map/out/soc1980_previews/mosaic_ortho_2p5_ff/mosaic_ortho.
 
 **Georeferencing: automated**, by Blag Map against ACTmapi's 2004–05 urban imagery (150 mm) and, where that runs out, its 2012 imagery (100 mm), resampled to 1.2 m.
 The median camera fits its matches to 3.0 m on the ground.
+
+### `cog/act-1968-cacc4-c15-blag-3857.tif` (1968)
+
+**Provenance.**
+The 1968 colour cover of the whole ACT and beyond, films CAC/C4 to CAC/C15, from GA's previews: 621 of 792 frames over 3,944 km², at 3 m.
+CAC/C16 was left out because GA serves no previews for it.
+It uses flat-field correction and dynamic-programming seams, but no gain compensation.
+The runs show as bands of different tone at regional zoom, most plainly over the southern ranges.
+A gain-compensated version, `out/act1968/mosaic_gain/`, scored better on seams (visibility 1.14 against 1.35), but the canonical run left gain off.
+Source: `~/repos/blag-map/out/act1968/mosaic/mosaic.tif`, finished at 11:42 on 7 October 2026.
+
+**Georeferencing: automated**, by Blag Map against a 2.8 m reference cut from the 1980 and 1974–75 references, both of ACTmapi's 2004–05 and 2012 imagery.
+The median camera fits its matches to 6.7 m on the ground, about two pixels.
+A few resections look false: the steepest camera is tilted 27°, where the median is 0.9°.
+At street zoom over the inner city, it sits squarely on the 2025 imagery.
 
 ### `cog/canberra-1945-map1537-blag-3857.tif` (1945)
 
