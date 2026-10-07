@@ -6,19 +6,41 @@
   "observability": {
     "enabled": true
   },
-  // Static site is index.html only (see .assetsignore). Assets are matched
-  // first, so `/` serves index.html and only /cog/* falls through to the
-  // Worker, which range-proxies the COG out of R2 with proper 206 responses
-  // (Cloudflare's 512 MB cache limit denies ranges for the 2.3 GB COG on a
-  // custom domain). Same origin as the page, so no CORS is needed.
+  // The site is dist/, which `npm run build` writes: index.html, layers.json
+  // (the layer list, built from layers.yaml and the hap-mosaics catalog) and
+  // STAC Browser under browse/. Assets are matched first, so only paths not in
+  // dist/ fall through to the Worker, which range-proxies them out of R2:
+  // /cog/* (the COGs, with proper 206s that Cloudflare's 512 MB cache limit
+  // would otherwise deny on a custom domain) and /stac/* (the public catalog).
+  // Same origin as the page, so no CORS is needed.
   "assets": {
-    "directory": ".",
+    "directory": "./dist",
     "binding": "ASSETS"
   },
   "r2_buckets": [
     {
       "binding": "BUCKET",
-      "bucket_name": "hap-mapper-tiles"
+      "bucket_name": "hap-mapper-tiles",
+      // `wrangler dev` reads the real bucket rather than an empty local one.
+      "remote": true
     }
-  ]
+  ],
+  "env": {
+    // The dev site, from the `dev` branch: npm run deploy:dev.
+    // https://hapmap-dev.u5007063.workers.dev
+    "dev": {
+      "name": "hapmap-dev",
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS"
+      },
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "hap-mapper-tiles",
+          "remote": true
+        }
+      ]
+    }
+  }
 }
