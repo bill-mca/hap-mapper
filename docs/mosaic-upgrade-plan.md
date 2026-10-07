@@ -3,6 +3,19 @@
 Written 7 October 2026.
 [r2-inventory.md](r2-inventory.md) records what is in the bucket; this document says what to do about it.
 
+## Status
+
+Steps 1 to 5 were done on 7 October 2026.
+What remains is under [Later](#later), and the SOC195 1980 COG, which waits on a full-scan Blag Map run of 1980.
+
+Three things went differently from the plan as written:
+
+- **The 1980 COG has an alpha band.** The grey mosaics draw transparent edges from NoData=0 alone, but the colour layers that already worked carry an alpha band, so the 1980 COG was rebuilt to match (see step 2).
+- **All the GA layers share one credit.** With a different credit per layer, MapLibre listed them all and the attribution box covered a third of the map. One identical string is shown once.
+- **The domains went the other way.** bilby chose to keep `tiles.hapmap.app` as a handle on the bucket. A second custom domain turned up, `tiles.hap-mapper.app`, and that was detached instead.
+
+The sections below are the plan as agreed.
+
 ## Where things stand
 
 The public site shows two historical years.
@@ -16,10 +29,34 @@ They improve on both dev layers, add three new years (1944, 1945 and 1974–75),
 
 The bucket also holds 2.5 GB that nothing reads: a Leaflet-era tile pyramid and two retired COGs.
 
-## Decisions for bilby
+## The new mosaics
 
-These are the choices that change what we do.
-Each has a recommendation.
+These are the Blag Map mosaics (`~/repos/blag-map`, the camera-and-DEM pipeline), made between 2 and 7 October 2026.
+Each was georeferenced automatically.
+Blag Map located every frame by deep image matching against a reference, then resected its camera against the Copernicus GLO-30 terrain model and orthorectified it.
+No control points were placed by hand.
+All are in GDA2020 / MGA 55 (EPSG:7855) with NoData=0 and internal overviews.
+
+| mosaic | year | ground | GSD | size | aligned to | supersedes |
+|---|---|---|---|---|---|---|
+| `out/map3584_1926_fullres/mosaic/mosaic.tif` | 1926 | central Canberra, 32 full scans of MAP3584 | 1 m, grey | 140 MB | the hand-corrected 1955 mosaic | `canberra-1926-map3584-3857.tif` |
+| `out/act1944/mosaic/mosaic.tif` | 1944 | 1,263 km² of the ACT, MAP658 and MAP753 previews | 5 m, grey | 60 MB | ACT 2004 and 2012 imagery (ACTmapi) | nothing; a new year |
+| `out/map1537_1945_fullres/mosaic/mosaic.tif` | 1945 | inner city, full scans of MAP1537 | 0.5 m, grey | 380 MB | the hand-corrected 1955 mosaic | nothing; a new year |
+| `out/act1974-75/mosaic/mosaic.tif` | 1974–75 | 2,119 km² of the ACT, CAS896, 898, 919 and 920 previews | 4 m, grey | 184 MB | ACT 2004 and 2012 imagery (ACTmapi) | nothing; a new year |
+| `out/soc1980_previews/mosaic_ortho_2p5_ff/mosaic_ortho.tif` | 1980 | the whole February 1980 SOC flight, about 45 km, from previews | 2.5 m, RGB | 490 MB | ACT 2004 and 2012 imagery (ACTmapi) | `canberra-1980-soc276-3857.tif` outright; `canberra-1980-soc195-3857.tif` on placement and tone, though not on sharpness |
+
+Known faults, from `~/repos/blag-map/progress.md`:
+
+- **1944** has a 1.5 by 2 km hole east of the inner south, where MAP658 frames 12876–12878 were never scanned. There is also a strip of film rebate on the western edge, and haze with hot spots on MAP753.
+- **1974–75** drifts in tone from hazy in the west to contrasty in the east.
+- **1980** has two gaps where frames could not be located. Its tone is otherwise even across the whole flight.
+- **1926 and 1945** were matched against the hand-corrected 1955 mosaic, so they inherit whatever error that correction has.
+
+There is no Blag Map mosaic of 1955 yet, so the deployed 1955 layer has nothing to replace it.
+
+## Decisions
+
+bilby agreed the first three recommendations on 7 October 2026, and chose to keep the domain.
 
 1. **Which 1980 layer?**
    Blag Map's 1980 mosaic is the best placed and the most even in tone, but at 2.5 m it is soft at street zoom.
@@ -36,6 +73,7 @@ Each has a recommendation.
 4. **Keep the `tiles.hapmap.app` custom domain?**
    Nothing uses it now, and once the pyramid is gone it only exposes the raw COGs.
    *Recommendation:* detach it from the bucket after step 1.
+   *Decided:* keep it as a handle on the bucket.
 
 ## The steps
 
@@ -48,7 +86,6 @@ Delete the Leaflet tile pyramid (`north-canberra-1955/`, 1.23 GB, 100,966 object
 Neither deployed page references them, and no repo on hectar does either.
 
 Deletion from R2 cannot be undone, so confirm with bilby before running it.
-Local copies of the two COGs survive in `~/hap-mosaics`; check that the pyramid also exists locally, or accept that it won't.
 
 ```sh
 rclone purge  gudgenby-r2:hap-mapper-tiles/north-canberra-1955
@@ -66,6 +103,8 @@ gdalwarp -t_srs EPSG:3857 -r cubic -dstnodata 0 -of COG \
   -co COMPRESS=DEFLATE -co PREDICTOR=2 -co BLOCKSIZE=512 -co OVERVIEWS=AUTO \
   SRC.tif DST.tif
 ```
+
+For a colour mosaic, swap `-dstnodata 0` for `-srcnodata 0 -dstalpha`, so the COG carries an alpha band like the other colour layers.
 
 Name each file after where, when and what it is, with the method in the name, so that a later run never overwrites an earlier one under the same key:
 

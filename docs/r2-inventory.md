@@ -1,94 +1,143 @@
 # What is in the R2 bucket
 
 This is the register of everything stored in the `hap-mapper-tiles` R2 bucket.
-For each object, it says how big it is, where it came from, and whether hapmap.app shows it.
+For each object, it says how big it is, where it came from, how it was put in place on the map, and whether hapmap.app shows it.
+It covers only what is in the bucket.
 Update it whenever an object is added, replaced or deleted, in the same commit as the page change that goes with it.
 
-Last checked: 7 October 2026, by listing the bucket with `rclone lsl gudgenby-r2:hap-mapper-tiles` and fetching both deployed pages.
+Last checked: 7 October 2026, by listing the bucket with `rclone lsl gudgenby-r2:hap-mapper-tiles` and loading every layer of both deployed pages in a headless browser.
 
 ## How the site reads the bucket
 
 Both Workers bind the bucket as `BUCKET` and serve COGs from it same-origin at `/cog/<key>`, through the range proxy in `worker/cog-proxy.js`.
 The proxy exists because Cloudflare will not serve byte ranges for objects over 512 MB from a custom domain.
 
-- **Production** is the `hapmap` Worker (`wrangler.jsonc`), serving `index.html`. It was last deployed on 21 September 2026, and the page it serves is byte-identical to `index.html` at `bbe3593`.
-- **Dev** is the `hapmap-dev` Worker (`wrangler.dev.jsonc`) at `https://hapmap-dev.u5007063.workers.dev`, serving `dev/index.html`. It was last deployed on 29 September 2026. Both files are gitignored, so the dev layer list lives only on hectar and in the deployed Worker.
+- **Production** is the `hapmap` Worker (`wrangler.jsonc`), serving `index.html`.
+- **Dev** is the `hapmap-dev` Worker (`wrangler.dev.jsonc`) at `https://hapmap-dev.u5007063.workers.dev`, serving `dev/index.html`. Both files are gitignored. Dev shows the same R2 layers as production, plus ACTmapi layers that are not in the bucket.
+
+Both were deployed on 7 October 2026.
 
 The bucket is also attached to the custom domain `tiles.hapmap.app`.
-Nothing in any repo on hectar uses that domain any more.
-
-The production page was checked through `hapmap.u5007063.workers.dev`.
-On 7 October, `https://hapmap.app` itself reset the connection from hectar, so the custom domain could not be checked from here.
+The site does not use it; it is kept as a public handle on the bucket.
+A second domain, `tiles.hap-mapper.app`, was detached on 7 October 2026.
+The bucket's public `r2.dev` URL is off.
 
 ## The bucket today
 
-The bucket holds 32.9 GB in 100,972 objects.
+The bucket holds 24.2 GB in 7 objects.
 Sizes are in decimal gigabytes.
 
-| key | size | uploaded | shown on |
-|---|---|---|---|
-| `cog/north-canberra-1955-cac80-3857.tif` | 14.36 GB | 2026-09-21 | **prod and dev** (1955) |
-| `cog/canberra-1980-soc195-3857.tif` | 8.60 GB | 2026-09-29 | **dev** (1980) |
-| `cog/canberra-1980-soc276-3857.tif` | 7.38 GB | 2026-09-09 | **prod** (1980) |
-| `north-canberra-1955/{14..20}/…` (XYZ pyramid, 100,966 tiles) | 1.23 GB | 2026-03 | nothing |
-| `cog/north-canberra-1955-odm-3857-jpeg.tif` | 0.72 GB | 2026-07-14 | nothing |
-| `cog/north-canberra-1955-cac80-large.tif` | 0.57 GB | 2026-05-15 | nothing |
-| `cog/canberra-1926-map3584-3857.tif` | 0.01 GB | 2026-09-29 | **dev** (1926) |
+| key | year | size | uploaded | shown on |
+|---|---|---|---|---|
+| `cog/north-canberra-1955-cac80-3857.tif` | 1955 | 14.36 GB | 2026-09-21 | prod and dev |
+| `cog/canberra-1980-soc195-3857.tif` | 1980 | 8.60 GB | 2026-09-29 | nothing; kept until a full-scan Blag Map 1980 replaces it |
+| `cog/canberra-1980-soc276-279-blag-3857.tif` | 1980 | 0.52 GB | 2026-10-07 | prod and dev |
+| `cog/canberra-1945-map1537-blag-3857.tif` | 1945 | 0.37 GB | 2026-10-07 | prod and dev |
+| `cog/act-1974-75-cas896-920-blag-3857.tif` | 1974–75 | 0.18 GB | 2026-10-07 | prod and dev |
+| `cog/canberra-1926-map3584-blag-3857.tif` | 1926 | 0.13 GB | 2026-10-07 | prod and dev |
+| `cog/act-1944-map658-753-blag-3857.tif` | 1944 | 0.06 GB | 2026-10-07 | prod and dev |
 
-### Provenance
+Every object is an EPSG:3857 COG with 512 px blocks, DEFLATE compression and internal overviews.
+Edges are transparent through NoData=0 in the grey files and through an alpha band in the colour ones.
 
-**`cog/north-canberra-1955-cac80-3857.tif`** is the complete 1955 CAC80-81-88 campaign.
-It has 239 frames, restituted by MicMac on Gadi at 0.15 m.
-It was reprojected from `~/hap-mosaics/CAC80-81-88_239frames_micmac-gadi_gray_modified.tif`, the hand-georeferenced copy in EPSG:7855 (commit `343daf7`).
-This is inferred from two things: its western edge matches that file's to the hundredth of a second, and it was made 95 minutes after that file.
-It is panchromatic with NoData=0.
-The `~/hap-mosaics` README warns of about 13 m of internal distortion against 1980 that no affine transformation removes, and of two no-data gaps over Woden and Weston.
+## How Blag Map georeferences
+
+Five of the files come from Blag Map (`~/repos/blag-map`), so its method is described once here.
+Blag Map matches each frame against a reference image to find where it lies.
+It then solves the frame's camera against the Copernicus GLO-30 terrain model and orthorectifies the frame through that camera.
+Nothing is placed by hand.
+
+The residuals quoted below are the cameras' own fit to their reference matches.
+They show how well each block agrees with its reference, not an independent measure of accuracy.
+A mosaic can be no better placed than the reference it was matched to.
+
+Each Blag Map mosaic was reprojected from EPSG:7855 to 3857 with `gdalwarp -r cubic` and uploaded unchanged otherwise.
+
+## Each object
+
+### `cog/north-canberra-1955-cac80-3857.tif` (1955)
+
+**Provenance.**
+The complete 1955 CAC80-81-88 campaign: 239 frames, restituted by MicMac on Gadi at 0.15 m (commit `343daf7`).
+It is panchromatic.
+The `~/hap-mosaics` README warns of two no-data gaps over Woden and Weston.
 Local copy: `~/hap-mosaics/derived/`.
 
-**`cog/canberra-1980-soc195-3857.tif`** is the 195-frame SOC276-279 block, made by ODM on Gadi from frames downsampled to 8,000 px (0.32 m).
+**Georeferencing: manual.**
+MicMac placed the block from GA's catalogue photo-centres, which left it about 220 m out.
+bilby then moved it by hand on 21 September, making `~/hap-mosaics/CAC80-81-88_239frames_micmac-gadi_gray_modified.tif`, and this COG was reprojected from that file.
+The correction kept the image north-up and unrotated: it shifted the origin by about +44 m E and +234 m N, and stretched the pixel from 0.1500 m to 0.1509 m.
+What it was aligned to was not recorded.
+A QGIS Georeferencer points file beside the source, dated 29 September, holds 8 ground control points (4 enabled), but it came after this COG and was not applied to it.
+The README also reports about 13 m of internal distortion against 1980 that no affine transformation removes, so a shift and a stretch cannot fix every part of the block.
+
+The 1926 and 1945 layers were matched against this mosaic, so any error in it carries into them.
+
+### `cog/canberra-1980-soc195-3857.tif` (1980, not shown)
+
+**Provenance.**
+The 195-frame SOC276-279 block, made by ODM on Gadi from frames downsampled to 8,000 px (0.32 m).
+It is RGB with an alpha band.
+It was the dev site's 1980 layer until 7 October.
+It is kept because it is eight times sharper than the Blag Map 1980 layer that replaced it.
+Delete it once a full-scan Blag Map run of 1980 exists.
+Local copy: `~/hap-mosaics/derived/`.
+
+**Georeferencing: automated.**
 The ODM output was 27% too large and turned 1.5°.
-It was fitted to ACT 2025 imagery by a scale search, then an affine fit, then a thin-plate spline; the working files are in `~/hap-mosaics/coreg/soc195/`.
-It is RGB.
-Local copy: `~/hap-mosaics/derived/`.
+Scripts in `~/hap-mosaics/coreg/soc195/` fitted it to the ACT Government's December 2025 imagery (ACTmapi `ACT_Aerial_Imagery_202512`).
+They ran a scale search, then an affine fit, then a thin-plate spline on 285 automatically matched control points to take out residual doming.
 
-**`cog/canberra-1980-soc276-3857.tif`** is the 27-frame SOC276/277 MicMac colour run at ZoomF=2 (commit `06a5fe1`).
-**It sits about 200 m out of place** (+110 m E, +170 m N, a 0.15° turn and +1,368 ppm of scale), as measured on 21 September, twelve days after it was uploaded.
-This is the 1980 layer the public site shows.
-Local copy: `~/hap-mosaics/derived/`.
+### `cog/canberra-1980-soc276-279-blag-3857.tif` (1980)
 
-**`north-canberra-1955/{z}/{x}/{y}`** is the XYZ tile pyramid for zooms 14 to 20 that the old Leaflet site used (commit `284d151`).
-Nothing has read it since the move to MapLibre and COGs in June.
+**Provenance.**
+The whole February 1980 colour flight, SOC276 to SOC279, from GA's preview images: 786 of 803 frames, at 2.5 m.
+It uses flat-field correction, a gain solve and dynamic-programming seams, and bilby judged it the best of the methods tried.
+Its tone is even across about 45 km, with two gaps where frames could not be located.
+The COG was rebuilt with an alpha band so that its edges draw transparent.
+Source: `~/repos/blag-map/out/soc1980_previews/mosaic_ortho_2p5_ff/mosaic_ortho.tif`.
 
-**`cog/north-canberra-1955-odm-3857-jpeg.tif`** is the 160-frame ODM ortho of 1955, reprojected to 3857 and JPEG-compressed.
-It was the dev layer in July and was superseded by the full CAC80-81-88 mosaic on 21 September.
+**Georeferencing: automated**, by Blag Map against ACTmapi's 2004–05 urban imagery (150 mm) and, where that runs out, its 2012 imagery (100 mm), resampled to 1.2 m.
+The median camera fits its matches to 3.0 m on the ground.
 
-**`cog/north-canberra-1955-cac80-large.tif`** is the first 1955 COG, from the Leaflet and georaster days (commit `dbd36c0`).
-It is in UTM 55S (EPSG:32755), which `maplibre-cog-protocol` refuses to draw.
+### `cog/canberra-1945-map1537-blag-3857.tif` (1945)
 
-**`cog/canberra-1926-map3584-3857.tif`** is 32 MAP3584 *preview* frames (about 3.5 m a pixel), run through MicMac on Gadi.
-It was fitted to the hand-georeferenced 1955 mosaic with a similarity transform: a turn of −0.62°, +3.7% scale and a median residual of about 7 m.
-The dev page's own comment calls it "a placeholder until full scans exist".
-The working files are in `~/hap-mosaics/coreg/map3584/`.
+**Provenance.**
+The inner city from full scans of MAP1537: 83 of 86 frames, at 0.5 m, grey.
+Source: `~/repos/blag-map/out/map1537_1945_fullres/mosaic/mosaic.tif`.
 
-## Waiting to go in
+**Georeferencing: automated**, by Blag Map against the hand-corrected 1955 mosaic, resampled to 0.5 m.
+It was matched to an image of its own era rather than to modern imagery, as Blag Map's README advises for frames this old.
+The median camera fits its matches to 1.1 m on the ground.
 
-These are the Blag Map mosaics (`~/repos/blag-map`, the camera-and-DEM pipeline), made between 2 and 7 October 2026.
-None is in the bucket yet.
-All are in GDA2020 / MGA 55 (EPSG:7855) with NoData=0 and internal overviews, so each needs reprojecting to 3857 before upload.
-Sizes are as they sit on disk.
+### `cog/act-1974-75-cas896-920-blag-3857.tif` (1974–75)
 
-| mosaic | year | ground | GSD | size | reference it was fitted to | supersedes |
-|---|---|---|---|---|---|---|
-| `out/map3584_1926_fullres/mosaic/mosaic.tif` | 1926 | central Canberra, 32 full scans of MAP3584 | 1 m, grey | 140 MB | hand-georeferenced 1955 mosaic | `canberra-1926-map3584-3857.tif` |
-| `out/act1944/mosaic/mosaic.tif` | 1944 | 1,263 km² of the ACT, MAP658 and MAP753 previews | 5 m, grey | 60 MB | ACT 2004 and 2012 imagery | nothing; a new year |
-| `out/map1537_1945_fullres/mosaic/mosaic.tif` | 1945 | inner city, full scans of MAP1537 | 0.5 m, grey | 380 MB | hand-georeferenced 1955 mosaic | nothing; a new year |
-| `out/act1974-75/mosaic/mosaic.tif` | 1974–75 | 2,119 km² of the ACT, CAS896, 898, 919 and 920 previews | 4 m, grey | 184 MB | ACT 2004 and 2012 imagery | nothing; a new year |
-| `out/soc1980_previews/mosaic_ortho_2p5_ff/mosaic_ortho.tif` | 1980 | the whole February 1980 SOC flight, about 45 km, from previews | 2.5 m, RGB | 490 MB | ACT 2004 and 2012 imagery | `canberra-1980-soc276-3857.tif` outright; `canberra-1980-soc195-3857.tif` on placement and tone, though not on sharpness |
+**Provenance.**
+Films CAS896, CAS898, CAS919 and CAS920, two flights a year apart, run as one block from GA's previews: 236 of 290 frames over 2,119 km² of the ACT, at 4 m, grey.
+Its tone drifts from hazy in the west to contrasty in the east.
+Source: `~/repos/blag-map/out/act1974-75/mosaic/mosaic.tif`.
 
-Known faults, from `~/repos/blag-map/progress.md`:
+**Georeferencing: automated**, by Blag Map against ACTmapi's 2004–05 and 2012 imagery, resampled to 4.2 m.
+The median camera fits its matches to 8.2 m on the ground, about two pixels.
 
-- **1944** has a 1.5 by 2 km hole east of the inner south, where MAP658 frames 12876–12878 were never scanned. There is also a strip of film rebate on the western edge, and haze with hot spots on MAP753.
-- **1974–75** drifts in tone from hazy in the west to contrasty in the east.
-- **1980** has two gaps where frames could not be located. Its tone is otherwise even across the whole flight.
+### `cog/canberra-1926-map3584-blag-3857.tif` (1926)
 
-There is no Blag Map mosaic of 1955 yet, so the deployed 1955 layer has nothing to replace it.
+**Provenance.**
+Central Canberra from full scans of MAP3584: 31 of 32 frames, at 1 m, grey.
+Six more frames of the film had no scan on hand, and were left out.
+Source: `~/repos/blag-map/out/map3584_1926_fullres/mosaic/mosaic.tif`.
+
+**Georeferencing: automated**, by Blag Map against the hand-corrected 1955 mosaic, resampled to 0.8 m.
+The median camera fits its matches to 2.1 m on the ground.
+
+### `cog/act-1944-map658-753-blag-3857.tif` (1944)
+
+**Provenance.**
+Films MAP658 and MAP753 from GA's previews: 100 of 123 frames over 1,263 km², a third of the ACT, at 5 m, grey.
+There is a 1.5 by 2 km hole east of the inner south, where MAP658 frames 12876–12878 were never scanned.
+There is also a strip of film rebate on the western edge, and haze with hot spots on MAP753.
+Source: `~/repos/blag-map/out/act1944/mosaic/mosaic.tif`.
+
+**Georeferencing: automated**, by Blag Map against ACTmapi's 2004–05 and 2012 imagery, resampled to 4.2 m.
+At 5 m, the matches are landform, rivers and old roads that have outlasted the city.
+The median camera fits its matches to 9.5 m on the ground, about two pixels.

@@ -5,10 +5,17 @@
 The steps are spelled out in [docs/mosaic-upgrade-plan.md](docs/mosaic-upgrade-plan.md).
 What is in the bucket is in [docs/r2-inventory.md](docs/r2-inventory.md).
 
-- [ ] Settle the four decisions in the plan: the 1980 layer, 1944 beside 1945, the 1974–75 label, and the `tiles.hapmap.app` domain.
-- [ ] Delete the Leaflet tile pyramid and the two retired 1955 COGs (2.5 GB), once bilby confirms.
-- [ ] Reproject the five Blag Map mosaics to 3857 COGs and upload them.
-- [ ] Try the new layers on `hapmap-dev`.
-- [ ] Carry them into `index.html`, fix the README, and deploy to production.
-- [ ] Delete the misplaced SOC276 1980 COG and the preview-frame 1926 COG.
+- [x] Settle the four decisions in the plan: the 1980 layer, 1944 beside 1945, the 1974–75 label, and the `tiles.hapmap.app` domain.
+- [x] Delete the Leaflet tile pyramid and the two retired 1955 COGs (2.5 GB).
+- [x] Reproject the five Blag Map mosaics to 3857 COGs and upload them.
+- [x] Try the new layers on `hapmap-dev`.
+- [x] Carry them into `index.html`, fix the README, and deploy to production.
+- [x] Delete the misplaced SOC276 1980 COG and the preview-frame 1926 COG.
 - [ ] Delete the SOC195 1980 COG once a full-scan Blag Map 1980 replaces it.
+
+## Later
+
+- [ ] A Blag Map run of the 1955 CAC campaign against the 2004 and 2012 reference, to test the hand-corrected 1955 layer and perhaps replace it.
+- [ ] Full-scan Blag Map runs of 1980 and 1974–75, for sharpness at street zoom.
+- [ ] The 1962–63, 1968, 1985, 1990 and 1992 sets, once Blag Map has run them.
+- [ ] Find out why `https://hapmap.app` resets connections from hectar while the `workers.dev` address works.

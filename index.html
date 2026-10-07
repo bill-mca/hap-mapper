@@ -163,6 +163,7 @@
             border-radius: 6px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
             cursor: grab;
+            white-space: nowrap;
             z-index: 3;
             transition: top 0.25s ease;
         }
@@ -267,7 +268,7 @@
         // never emits an alpha band). NoData=0 marks the mosaic's ragged
         // edges/gaps, so `pixel[1]` (alpha) is always undefined here and the
         // noData check alone drives transparency. Runs once per pixel — fast.
-        setColorFunction(COG_1955, function (pixel, color, metadata) {
+        function grayscaleWithNoData(pixel, color, metadata) {
             var lum = pixel[0];
             var alpha = pixel[1];
             if (alpha === 0 || lum === metadata.noData || lum === null || isNaN(lum)) {
@@ -275,17 +276,47 @@
             } else {
                 color.set([lum, lum, lum, alpha === undefined ? 255 : alpha]);
             }
-        });
+        }
+        setColorFunction(COG_1955, grayscaleWithNoData);
 
-        // 1980 is a standard 3-band RGB COG (colour restitution from
-        // SOC276/277, ZoomF=2 MicMac run), so maplibre-cog-protocol renders
-        // it from its own PhotometricInterpretation tag — no setColorFunction
-        // needed. Covers the north/east side of the city (Reid, Russell,
-        // Kingston, Fyshwick, Narrabundah); doesn't reach the lake's south
-        // shore or Scrivener Dam, which is the extent of the source imagery.
-        var COG_1980 = location.origin + '/cog/canberra-1980-soc276-3857.tif';
+        // The other HAP years are Blag Map mosaics (~/repos/blag-map): each
+        // frame located by image matching against a reference, its camera
+        // resected against the Copernicus DEM, then orthorectified. All are
+        // EPSG:3857 COGs with 512x512 blocks and NoData=0. See
+        // docs/r2-inventory.md for what each was aligned to.
+        var GA_CREDIT = '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>';
+
+        // One timeline entry for a COG in R2. `gray` marks a single-band
+        // panchromatic COG, which needs the NoData colour function; RGB COGs
+        // render from their own PhotometricInterpretation tag. `label` is
+        // what the handle shows when it differs from the year.
+        function cogYear(opts) {
+            var layerId = 'imagery-' + opts.year;
+            var url = location.origin + '/cog/' + opts.key;
+            if (opts.gray) setColorFunction(url, grayscaleWithNoData);
+            return {
+                year: opts.year,
+                label: opts.label,
+                layerId: layerId,
+                addSource: function (map) {
+                    map.addSource(layerId, {
+                        type: 'raster',
+                        url: 'cog://' + url,
+                        tileSize: 512, // matches the COG's internal block size — see imagery-1955
+                        // Identical to the 1955 credit, so MapLibre shows it once.
+                        attribution: GA_CREDIT
+                    });
+                }
+            };
+        }
 
         var IMAGERY_YEARS = [
+            // MAP3584: central Canberra, full scans, 1 m.
+            cogYear({ year: 1926, key: 'canberra-1926-map3584-blag-3857.tif', gray: true }),
+            // MAP658, MAP753: a third of the ACT from previews, 5 m.
+            cogYear({ year: 1944, key: 'act-1944-map658-753-blag-3857.tif', gray: true }),
+            // MAP1537: the inner city, full scans, 0.5 m.
+            cogYear({ year: 1945, key: 'canberra-1945-map1537-blag-3857.tif', gray: true }),
             {
                 year: 1955,
                 layerId: 'imagery-1955',
@@ -302,18 +333,12 @@
                     });
                 }
             },
-            {
-                year: 1980,
-                layerId: 'imagery-1980',
-                addSource: function (map) {
-                    map.addSource('imagery-1980', {
-                        type: 'raster',
-                        url: 'cog://' + COG_1980,
-                        tileSize: 512, // matches this COG's internal block size — see imagery-1955
-                        attribution: '&copy; Hap-Map project &mdash; SOC276/277 aerial survey, restituted via MicMac'
-                    });
-                }
-            },
+            // CAS896, CAS898, CAS919, CAS920: two flights a year apart, as one
+            // block over most of the ACT, 4 m.
+            cogYear({ year: 1974, label: '1974–75', key: 'act-1974-75-cas896-920-blag-3857.tif', gray: true }),
+            // SOC276-SOC279: the whole February 1980 colour flight from previews,
+            // 2.5 m, RGB with an alpha band.
+            cogYear({ year: 1980, key: 'canberra-1980-soc276-279-blag-3857.tif' }),
             {
                 year: 2025,
                 layerId: 'imagery-2025',
@@ -365,7 +390,7 @@
         // ------------------------------------------------------------------
         // Timeline
         // ------------------------------------------------------------------
-        var TIMELINE_MIN = 1950;
+        var TIMELINE_MIN = 1920; // reaches 1926 (MAP3584)
         var TIMELINE_MAX = 2030;
 
         var track = document.getElementById('track');
@@ -415,7 +440,7 @@
         IMAGERY_YEARS.forEach(function (entry) {
             var dot = document.createElement('div');
             dot.className = 'year-dot';
-            dot.title = String(entry.year);
+            dot.title = labelFor(entry.year);
             dot.style.top = yearToPercent(entry.year) + '%';
             dot.addEventListener('click', function (e) {
                 e.stopPropagation();
@@ -424,9 +449,16 @@
             track.appendChild(dot);
         });
 
+        // An imagery year shows its label (e.g. "1974–75"); anywhere else on
+        // the track, mid-drag, shows the rounded year.
+        function labelFor(year) {
+            var entry = IMAGERY_YEARS.find(function (e) { return e.year === year; });
+            return entry && entry.label ? entry.label : String(Math.round(year));
+        }
+
         function updateHandle(year) {
             handle.style.top = yearToPercent(year) + '%';
-            handle.textContent = Math.round(year);
+            handle.textContent = labelFor(year);
         }
 
         // Switch the visible imagery by fading raster layers. The base (newest)
