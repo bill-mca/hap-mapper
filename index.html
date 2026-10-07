@@ -6,9 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- MapLibre GL CSS/JS. MapLibre is a WebGL map engine; unlike Leaflet it
-         renders rasters on the GPU, which lets the 1955 Cloud-Optimized GeoTIFF
-         be reprojected (UTM 55S -> Web Mercator) on the fly without choking the
-         main thread, and gives smooth raster-opacity crossfades for free. -->
+         renders rasters on the GPU, which gives smooth raster-opacity
+         crossfades for free. Every historical layer is a Web Mercator COG. -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
     <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
@@ -174,6 +173,218 @@
             transform: translate(-50%, -50%) scale(1.12);
         }
 
+        /* ---- About this layer (opens from the title card) ---- */
+        #title-card {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #info-btn {
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: transparent;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 3px 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        #info-btn:hover,
+        #info-btn[aria-expanded="true"] {
+            background: var(--hap-navy-light);
+        }
+
+        #layer-info {
+            position: absolute;
+            top: 58px;
+            left: 54px;
+            z-index: 6;
+            width: min(340px, calc(100vw - var(--timeline-width) - 70px));
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            background: #fff;
+            color: #1d2733;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        #layer-info[hidden] {
+            display: none;
+        }
+
+        #layer-info h2 {
+            margin: 0 0 2px;
+            font-size: 15px;
+            color: var(--hap-navy);
+        }
+
+        #layer-info h3 {
+            margin: 10px 0 2px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #54657c;
+        }
+
+        #layer-info p,
+        #layer-info ul {
+            margin: 4px 0;
+        }
+
+        #layer-info ul {
+            padding-left: 18px;
+        }
+
+        #layer-info .hint {
+            margin-top: 10px;
+            padding: 6px 8px;
+            background: #fff6e5;
+            border-left: 3px solid var(--hap-accent);
+        }
+
+        /* ---- Click popup: which photograph this spot came from ---- */
+        .maplibregl-popup-content {
+            font-size: 13px;
+            line-height: 1.45;
+            color: #1d2733;
+            padding: 10px 14px;
+            max-width: 300px;
+        }
+
+        .frame-pop h4 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            color: var(--hap-navy);
+        }
+
+        .frame-pop p {
+            margin: 4px 0;
+        }
+
+        .frame-pop .muted {
+            color: #54657c;
+        }
+
+        .frame-pop .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .frame-pop button,
+        .frame-pop a.btn {
+            border: 1px solid var(--hap-navy);
+            background: #fff;
+            color: var(--hap-navy);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .frame-pop button:hover,
+        .frame-pop a.btn:hover,
+        .frame-pop button[aria-pressed="true"] {
+            background: var(--hap-navy);
+            color: #fff;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #54657c;
+        }
+
+        .legend i {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-right: 3px;
+            vertical-align: -1px;
+        }
+
+        /* ---- The photograph, with its tie points ---- */
+        #photo {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            background: rgba(11, 22, 34, 0.86);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        #photo[hidden] {
+            display: none;
+        }
+
+        #photo figure {
+            margin: 0;
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px 12px 12px;
+            max-width: min(96vw, 900px);
+            max-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+            color: #1d2733;
+        }
+
+        #photo header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        #photo-close {
+            border: none;
+            background: none;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            color: #54657c;
+        }
+
+        #photo .frame {
+            position: relative;
+            min-height: 0;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        #photo img {
+            display: block;
+            max-width: 100%;
+            max-height: calc(94vh - 120px);
+            object-fit: contain;
+        }
+
+        #photo svg {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        #photo figcaption {
+            margin-top: 8px;
+        }
+
         /* Keep MapLibre attribution clear of the timeline */
         .maplibregl-ctrl-bottom-right {
             right: var(--timeline-width);
@@ -187,6 +398,12 @@
             #title-card h1 {
                 font-size: 13px;
             }
+
+            /* "1974–75" must fit the narrower timeline */
+            #handle {
+                font-size: 12px;
+                padding: 5px 6px;
+            }
         }
     </style>
 </head>
@@ -198,6 +415,23 @@
     <!-- Title card -->
     <div id="title-card">
         <h1>Hap-Map</h1>
+        <button id="info-btn" type="button" aria-expanded="false" aria-controls="layer-info">About this layer</button>
+    </div>
+    <section id="layer-info" hidden aria-live="polite"></section>
+
+    <!-- A photograph and its tie points, opened from the click popup -->
+    <div id="photo" hidden role="dialog" aria-modal="true" aria-labelledby="photo-title">
+        <figure>
+            <header>
+                <strong id="photo-title"></strong>
+                <button id="photo-close" type="button" aria-label="Close">&times;</button>
+            </header>
+            <div class="frame">
+                <img id="photo-img" alt="">
+                <svg id="photo-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+            <figcaption id="photo-caption"></figcaption>
+        </figure>
     </div>
 
     <!-- Timeline (topotijdreis-style year slider) -->
@@ -210,13 +444,77 @@
 
     <script type="module">
         // The COG protocol is ESM; esm.sh resolves its bundled deps (geotiff,
-        // d3-scale, sphericalmercator) into a browser-ready module so the site
-        // keeps its no-build-step setup.
+        // d3-scale, sphericalmercator) into a browser-ready module.
         import { cogProtocol, setColorFunction }
             from 'https://esm.sh/@geomatico/maplibre-cog-protocol@0.9.0';
 
         // Teach MapLibre how to fetch `cog://` raster tiles.
         maplibregl.addProtocol('cog', cogProtocol);
+
+        // ------------------------------------------------------------------
+        // The layers. `npm run build` writes /layers.json from layers.yaml and
+        // the hap-mosaics STAC catalog: one entry per imagery year, with its
+        // COG, its flight dates and, for a Blag Map mosaic, which photograph
+        // made each pixel. To add a year, add its item ID to layers.yaml.
+        // ------------------------------------------------------------------
+        var SITE = await fetch('/layers.json').then(function (r) { return r.json(); });
+
+        // Every historical layer is GA's photography under CC BY 4.0. One
+        // string for all of them, so MapLibre shows the credit once.
+        var GA_CREDIT = '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>';
+
+        // A single-band panchromatic COG needs this colour function: NoData
+        // (0) and alpha 0 are transparent, anything else is grey. RGB COGs
+        // render from their own PhotometricInterpretation tag.
+        function grayscaleWithNoData(pixel, color, metadata) {
+            var lum = pixel[0];
+            var alpha = pixel[1];
+            if (alpha === 0 || lum === metadata.noData || lum === null || isNaN(lum)) {
+                color.set([0, 0, 0, 0]);
+            } else {
+                color.set([lum, lum, lum, alpha === undefined ? 255 : alpha]);
+            }
+        }
+
+        // One timeline entry for a COG layer from the catalog. Every COG is
+        // EPSG:3857 with 512x512 blocks, served same-origin by the Worker's
+        // range proxy (worker/cog-proxy.js); the tileSize must match the
+        // block size, or the protocol decodes a whole block per quarter tile.
+        function cogEntry(layer) {
+            var layerId = 'imagery-' + layer.year;
+            var url = location.origin + layer.cog;
+            if (layer.gray) setColorFunction(url, grayscaleWithNoData);
+            return Object.assign({}, layer, {
+                layerId: layerId,
+                addSource: function (map) {
+                    map.addSource(layerId, {
+                        type: 'raster',
+                        url: 'cog://' + url,
+                        tileSize: 512,
+                        attribution: GA_CREDIT
+                    });
+                }
+            });
+        }
+
+        // The present day, always drawn underneath.
+        function baseEntry(base) {
+            return Object.assign({}, base, {
+                layerId: 'imagery-' + base.year,
+                addSource: function (map) {
+                    map.addSource('imagery-' + base.year, {
+                        type: 'raster',
+                        tiles: [base.tiles],
+                        tileSize: base.tileSize,
+                        maxzoom: base.maxzoom,
+                        attribution: base.attribution
+                    });
+                }
+            });
+        }
+
+        var IMAGERY_YEARS = SITE.layers.map(cogEntry).concat([baseEntry(SITE.base)]);
+        var BASE = IMAGERY_YEARS[IMAGERY_YEARS.length - 1]; // newest year
 
         // ------------------------------------------------------------------
         // Map setup. MapLibre zoom is ~1 level "tighter" than Leaflet's, so
@@ -248,117 +546,6 @@
         }), 'top-left');
         canberraMap.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
 
-        // ------------------------------------------------------------------
-        // Imagery years. To add a new year of HAP imagery, append an entry
-        // here (keep the list sorted oldest -> newest). The newest year is the
-        // always-visible base layer; older years crossfade on top of it.
-        // ------------------------------------------------------------------
-        // Same-origin: this Worker range-proxies the COG out of R2 (see
-        // worker/cog-proxy.js), returning proper 206s that Cloudflare's 512 MB
-        // cache limit would otherwise deny for a 14 GB object on a custom
-        // domain. The COG is reprojected to EPSG:3857 — maplibre-cog-protocol
-        // only renders Web Mercator COGs, not the source GDA2020/MGA55.
-        // This is the complete 239-frame CAC80-81-88 1955 campaign mosaic
-        // (MicMac, restituted on Gadi), covering far more of the 1955
-        // extent than the earlier ODM-derived north-Canberra-only COG it
-        // replaces.
-        var COG_1955 = location.origin + '/cog/north-canberra-1955-cac80-3857.tif';
-
-        // The 1955 COG is panchromatic, single-band (MicMac's Tawny stage
-        // never emits an alpha band). NoData=0 marks the mosaic's ragged
-        // edges/gaps, so `pixel[1]` (alpha) is always undefined here and the
-        // noData check alone drives transparency. Runs once per pixel — fast.
-        function grayscaleWithNoData(pixel, color, metadata) {
-            var lum = pixel[0];
-            var alpha = pixel[1];
-            if (alpha === 0 || lum === metadata.noData || lum === null || isNaN(lum)) {
-                color.set([0, 0, 0, 0]);
-            } else {
-                color.set([lum, lum, lum, alpha === undefined ? 255 : alpha]);
-            }
-        }
-        setColorFunction(COG_1955, grayscaleWithNoData);
-
-        // The other HAP years are Blag Map mosaics (~/repos/blag-map): each
-        // frame located by image matching against a reference, its camera
-        // resected against the Copernicus DEM, then orthorectified. All are
-        // EPSG:3857 COGs with 512x512 blocks and NoData=0. See
-        // docs/r2-inventory.md for what each was aligned to.
-        var GA_CREDIT = '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>';
-
-        // One timeline entry for a COG in R2. `gray` marks a single-band
-        // panchromatic COG, which needs the NoData colour function; RGB COGs
-        // render from their own PhotometricInterpretation tag. `label` is
-        // what the handle shows when it differs from the year.
-        function cogYear(opts) {
-            var layerId = 'imagery-' + opts.year;
-            var url = location.origin + '/cog/' + opts.key;
-            if (opts.gray) setColorFunction(url, grayscaleWithNoData);
-            return {
-                year: opts.year,
-                label: opts.label,
-                layerId: layerId,
-                addSource: function (map) {
-                    map.addSource(layerId, {
-                        type: 'raster',
-                        url: 'cog://' + url,
-                        tileSize: 512, // matches the COG's internal block size — see imagery-1955
-                        // Identical to the 1955 credit, so MapLibre shows it once.
-                        attribution: GA_CREDIT
-                    });
-                }
-            };
-        }
-
-        var IMAGERY_YEARS = [
-            // MAP3584: central Canberra, full scans, 1 m.
-            cogYear({ year: 1926, key: 'canberra-1926-map3584-blag-3857.tif', gray: true }),
-            // MAP658, MAP753: a third of the ACT from previews, 5 m.
-            cogYear({ year: 1944, key: 'act-1944-map658-753-blag-3857.tif', gray: true }),
-            // MAP1537: the inner city, full scans, 0.5 m.
-            cogYear({ year: 1945, key: 'canberra-1945-map1537-blag-3857.tif', gray: true }),
-            {
-                year: 1955,
-                layerId: 'imagery-1955',
-                addSource: function (map) {
-                    map.addSource('imagery-1955', {
-                        type: 'raster',
-                        url: 'cog://' + COG_1955,
-                        // Must match the COG's internal block size (512x512):
-                        // a mismatched tileSize forces the protocol to
-                        // decode a full 512x512 block per requested 256x256
-                        // tile, quadrupling client-side decode work.
-                        tileSize: 512,
-                        attribution: '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>'
-                    });
-                }
-            },
-            // CAC/C4 to CAC/C15: the whole ACT and beyond, in colour, from
-            // previews, 3 m, RGB with an alpha band.
-            cogYear({ year: 1968, key: 'act-1968-cacc4-c15-blag-3857.tif' }),
-            // CAS896, CAS898, CAS919, CAS920: two flights a year apart, as one
-            // block over most of the ACT, 4 m.
-            cogYear({ year: 1974, label: '1974–75', key: 'act-1974-75-cas896-920-blag-3857.tif', gray: true }),
-            // SOC276-SOC279: the whole February 1980 colour flight from previews,
-            // 2.5 m, RGB with an alpha band.
-            cogYear({ year: 1980, key: 'canberra-1980-soc276-279-blag-3857.tif' }),
-            {
-                year: 2025,
-                layerId: 'imagery-2025',
-                addSource: function (map) {
-                    map.addSource('imagery-2025', {
-                        type: 'raster',
-                        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-                        tileSize: 256,
-                        maxzoom: 19,
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                    });
-                }
-            }
-        ];
-
-        var BASE = IMAGERY_YEARS[IMAGERY_YEARS.length - 1]; // newest year
-
         // Add the base layer first (bottom of the stack), then the older years
         // above it so they can fade in/out over the base. Each older raster
         // layer starts fully transparent.
@@ -384,6 +571,7 @@
                     }
                 });
             });
+            addTieLayers();
 
             // Start on the newest (base) imagery; the timeline lets people
             // travel back from the present rather than opening in the past.
@@ -393,7 +581,8 @@
         // ------------------------------------------------------------------
         // Timeline
         // ------------------------------------------------------------------
-        var TIMELINE_MIN = 1920; // reaches 1926 (MAP3584)
+        // Start on the decade before the oldest year, so it never sits on the edge.
+        var TIMELINE_MIN = Math.floor((IMAGERY_YEARS[0].year - 4) / 10) * 10;
         var TIMELINE_MAX = 2030;
 
         var track = document.getElementById('track');
@@ -401,6 +590,10 @@
         var playBtn = document.getElementById('play-btn');
 
         var activeYear = BASE.year;
+
+        function activeEntry() {
+            return IMAGERY_YEARS.find(function (e) { return e.year === activeYear; });
+        }
 
         // Year <-> vertical position (newest at the top, like topotijdreis)
         function yearToPercent(year) {
@@ -472,6 +665,8 @@
                 canberraMap.setPaintProperty(
                     entry.layerId, 'raster-opacity', (entry.year === year) ? 1 : 0);
             });
+            closeFrame();
+            renderLayerInfo();
         }
 
         function setYear(year) {
@@ -513,8 +708,12 @@
         track.addEventListener('pointerup', onPointerUp);
         track.addEventListener('pointercancel', onPointerUp);
 
-        // Keyboard: step between available imagery years
+        // Keyboard: step between available imagery years; Escape closes things
         document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closePhoto();
+                return;
+            }
             var idx = IMAGERY_YEARS.findIndex(function (entry) {
                 return entry.year === activeYear;
             });
@@ -556,6 +755,352 @@
                 setYear(IMAGERY_YEARS[next].year);
             }, 2500);
         });
+
+        // ------------------------------------------------------------------
+        // About this layer: what it is, when it was flown, how it was placed
+        // ------------------------------------------------------------------
+        var infoBtn = document.getElementById('info-btn');
+        var infoPanel = document.getElementById('layer-info');
+
+        infoBtn.addEventListener('click', function () {
+            var open = infoPanel.hidden;
+            infoPanel.hidden = !open;
+            infoBtn.setAttribute('aria-expanded', String(open));
+            renderLayerInfo();
+        });
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'];
+
+        // GA records a day, a month or only a year; say no more than it knows.
+        function niceDate(iso) {
+            if (!iso) return '';
+            var p = String(iso).slice(0, 10).split('-');
+            if (p.length === 1) return p[0] + ' (day not recorded)';
+            return Number(p[2]) + ' ' + MONTHS[Number(p[1]) - 1] + ' ' + p[0];
+        }
+
+        function flown(layer) {
+            var a = layer.start.slice(0, 10), b = layer.end.slice(0, 10);
+            if (a.slice(5) === '01-01' && b.slice(5) === '12-31' && a.slice(0, 4) === b.slice(0, 4)) {
+                return 'in ' + a.slice(0, 4) + ' (day not recorded)';
+            }
+            return a === b ? 'on ' + niceDate(a) : 'between ' + niceDate(a) + ' and ' + niceDate(b);
+        }
+
+        var GEOREF = {
+            automated: 'Placed automatically.',
+            manual: 'Placed by hand.',
+            unverified: 'Placement not checked.',
+            wrong: 'Known to be out of place.'
+        };
+
+        function renderLayerInfo() {
+            if (infoPanel.hidden) return;
+            var l = activeEntry();
+            if (l === BASE) {
+                infoPanel.innerHTML = '<h2>' + esc(l.label) + ': ' + esc(l.title) + '</h2><p>' + esc(l.description) + '</p>' +
+                    '<p class="hint">Move the timeline back to see Canberra from the air in earlier years.</p>';
+                return;
+            }
+            var films = l.films.join(', ').replace(/, ([^,]*)$/, ' and $1');
+            var html = '<h2>' + esc(l.label) + '</h2>' +
+                '<p>' + esc(l.title) + '.</p>' +
+                '<p>Photographed ' + esc(flown(l)) + ' on film' + (l.films.length > 1 ? 's ' : ' ') + esc(films) +
+                (l.sourceFrame ? ', ' + l.sourceFrame.classes.length + ' photographs in all' : '') + '.' +
+                (l.gsd ? ' Each pixel is about ' + esc(l.gsd < 1 ? l.gsd.toFixed(2) : l.gsd.toFixed(1)) + ' m across.' : '') + '</p>' +
+                '<h3>How it was placed</h3><p>' + esc(GEOREF[l.georef.status] || '') + ' ' + esc(l.georef.method || '') + '</p>' +
+                (l.georef.notes ? '<p>' + esc(l.georef.notes) + '</p>' : '');
+            if (l.knownIssues.length) {
+                html += '<h3>Known faults</h3><ul>' + l.knownIssues.map(function (k) {
+                    return '<li>' + esc(k) + '</li>';
+                }).join('') + '</ul>';
+            }
+            if (l.sourceFrame) {
+                html += '<p class="hint">Click anywhere on the map to see which photograph that spot came from, when it was taken, and how it was put in place.</p>';
+            }
+            html += '<h3>Data</h3><p><a href="' + esc(l.record) + '" target="_blank" rel="noopener">Catalog record</a> · ' +
+                '<a href="/browse/" target="_blank" rel="noopener">Browse the catalog</a> · ' +
+                '<a href="' + esc(l.cog) + '" title="A Cloud-Optimized GeoTIFF: open it in QGIS or GDAL with /vsicurl/">GeoTIFF</a></p>' +
+                '<p class="muted">Photography &copy; Geoscience Australia, CC BY 4.0.</p>';
+            infoPanel.innerHTML = html;
+        }
+
+        // ------------------------------------------------------------------
+        // Click a spot: which photograph made it, and how that photograph was
+        // placed. Blag Map records the source frame of every pixel; the map
+        // reads one pixel of that raster with a single range request.
+        // ------------------------------------------------------------------
+        var geotiff = null; // loaded on the first click
+        var labelImages = new Map(); // COG path -> Promise<GeoTIFFImage>
+        var fits = new Map(); // frame_fit path -> Promise<JSON>
+        var popup = null;
+        var shown = null; // { layer, gfid } the popup is about
+
+        function fetchJson(path) {
+            return fetch(path).then(function (r) {
+                if (!r.ok) throw new Error(path + ': HTTP ' + r.status);
+                return r.json();
+            });
+        }
+
+        function cached(map, key, make) {
+            if (!map.has(key)) map.set(key, make());
+            return map.get(key);
+        }
+
+        function toMercator(lngLat) {
+            var R = 6378137;
+            var x = R * lngLat.lng * Math.PI / 180;
+            var y = R * Math.log(Math.tan(Math.PI / 4 + lngLat.lat * Math.PI / 360));
+            return [x, y];
+        }
+
+        async function frameValueAt(sf, lngLat) {
+            if (!geotiff) geotiff = await import('https://esm.sh/geotiff@2.1.3');
+            var image = await cached(labelImages, sf.cog, function () {
+                return geotiff.fromUrl(location.origin + sf.cog, { allowFullFile: false })
+                    .then(function (t) { return t.getImage(0); });
+            });
+            var xy = toMercator(lngLat);
+            var origin = image.getOrigin();
+            var res = image.getResolution();
+            var col = Math.floor((xy[0] - origin[0]) / res[0]);
+            var row = Math.floor((xy[1] - origin[1]) / res[1]);
+            if (col < 0 || row < 0 || col >= image.getWidth() || row >= image.getHeight()) return 0;
+            var r = await image.readRasters({ window: [col, row, col + 1, row + 1] });
+            return r[0][0];
+        }
+
+        function classFor(sf, value) {
+            var c = sf.classes.find(function (k) { return k[0] === value; });
+            return c && { value: c[0], gfid: c[1], title: c[2], date: c[3] };
+        }
+
+        canberraMap.on('click', async function (e) {
+            var layer = activeEntry();
+            if (layer === BASE) return;
+            closeFrame();
+            popup = new maplibregl.Popup({ maxWidth: '320px' }).setLngLat(e.lngLat)
+                .setHTML('<div class="frame-pop"><p class="muted">Looking…</p></div>').addTo(canberraMap);
+            popup.on('close', clearTies);
+            var mine = popup;
+            try {
+                var html = layer.sourceFrame ? await framePopup(layer, e.lngLat) : layerPopup(layer);
+                if (mine === popup) popup.setHTML(html);
+            } catch (err) {
+                console.error(err);
+                if (mine === popup) popup.setHTML('<div class="frame-pop"><p>Could not read this spot: ' + esc(err.message) + '</p></div>');
+            }
+        });
+
+        // For a layer without per-pixel provenance, say what the layer is.
+        function layerPopup(layer) {
+            return '<div class="frame-pop"><h4>' + esc(layer.label) + '</h4><p>' + esc(layer.title) + '.</p>' +
+                '<p class="muted">' + esc(GEOREF[layer.georef.status] || '') + ' ' + esc(layer.georef.method || '') + '</p>' +
+                '<p class="muted">This mosaic does not record which photograph each spot came from.</p>' +
+                '<div class="actions"><a class="btn" href="' + esc(layer.record) + '" target="_blank" rel="noopener">Catalog record</a></div></div>';
+        }
+
+        async function framePopup(layer, lngLat) {
+            var sf = layer.sourceFrame;
+            var value = await frameValueAt(sf, lngLat);
+            if (!value) {
+                return '<div class="frame-pop"><p>No ' + esc(layer.label) + ' photograph covers this spot.</p></div>';
+            }
+            var frame = classFor(sf, value);
+            var fit = sf.fit ? (await cached(fits, sf.fit, function () { return fetchJson(sf.fit); })) : null;
+            var f = fit && fit.frames[frame.gfid];
+            shown = { layer: layer, frame: frame, fit: f, photo: fit && fit.photo };
+
+            var html = '<div class="frame-pop"><h4>' + esc(frame.title) + '</h4>' +
+                '<p class="muted">' + esc(niceDate(frame.date)) + '</p>';
+            if (f) {
+                html += '<p>Placed by ' + f.kept.toLocaleString() + ' of ' + f.points.toLocaleString() +
+                    ' points matched to ' + esc(fit.reference) + '; fits to about &plusmn;' + esc(Math.round(f.fit_m)) + ' m.</p>';
+                if (fit.reference_note) html += '<p class="muted">' + esc(fit.reference_note) + '</p>';
+                if (f.catalogue_offset_m !== null) {
+                    html += '<p>GA\'s catalogue had this photograph ' + esc(f.catalogue_offset_m.toLocaleString()) +
+                        ' m from where it belongs.</p>';
+                }
+                if (f.how_text) html += '<p class="muted">It was ' + esc(f.how_text) + '.</p>';
+            }
+            html += '<div class="actions">' +
+                (sf.ties ? '<button type="button" data-act="ties" aria-pressed="false">Show tie points</button>' : '') +
+                '<button type="button" data-act="photo">View photograph</button>' +
+                '<a class="btn" href="' + esc(sf.frameBrowse.replace('{name}', frame.gfid)) + '" target="_blank" rel="noopener">Record</a>' +
+                '</div><div class="legend" hidden></div></div>';
+            return html;
+        }
+
+        // The popup's buttons, delegated so they survive setHTML.
+        document.getElementById('map').addEventListener('click', function (e) {
+            var btn = e.target.closest('.frame-pop [data-act]');
+            if (!btn || !shown) return;
+            if (btn.dataset.act === 'ties') toggleTies(btn);
+            if (btn.dataset.act === 'photo') openPhoto();
+        });
+
+        // ------------------------------------------------------------------
+        // Tie points on the map, coloured by how well each fits
+        // ------------------------------------------------------------------
+        var TIE_COLOURS = ['interpolate', ['linear'], ['get', 'r'], 0, '#1a9850', 4, '#91cf60', 8, '#fee08b', 15, '#fc8d59', 30, '#d73027'];
+        var tiePoints = null; // the frame's points, for the photograph too
+
+        function addTieLayers() {
+            canberraMap.addSource('ties', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            canberraMap.addLayer({
+                id: 'ties-rejected', type: 'circle', source: 'ties', filter: ['==', ['get', 'k'], 0],
+                paint: { 'circle-radius': 2.5, 'circle-color': '#ffffff', 'circle-opacity': 0.45, 'circle-stroke-width': 0 }
+            });
+            canberraMap.addLayer({
+                id: 'ties-kept', type: 'circle', source: 'ties', filter: ['==', ['get', 'k'], 1],
+                paint: { 'circle-radius': 3, 'circle-color': TIE_COLOURS, 'circle-stroke-color': '#0b1622', 'circle-stroke-width': 0.5 }
+            });
+        }
+
+        async function loadTies() {
+            var url = shown.layer.sourceFrame.ties.replace('{name}', shown.frame.gfid);
+            var t = await fetchJson(url);
+            return t.points.map(function (p) {
+                return { lon: p[0], lat: p[1], r: p[2], k: p[3], x: p[4], y: p[5] };
+            });
+        }
+
+        async function toggleTies(btn) {
+            var on = btn.getAttribute('aria-pressed') !== 'true';
+            if (!on) {
+                clearTies();
+                btn.setAttribute('aria-pressed', 'false');
+                btn.textContent = 'Show tie points';
+                btn.parentNode.nextElementSibling.hidden = true;
+                return;
+            }
+            btn.textContent = 'Loading…';
+            tiePoints = tiePoints || await loadTies();
+            canberraMap.getSource('ties').setData({
+                type: 'FeatureCollection',
+                features: tiePoints.map(function (p) {
+                    return { type: 'Feature', geometry: { type: 'Point', coordinates: [p.lon, p.lat] }, properties: { r: p.r, k: p.k } };
+                })
+            });
+            btn.setAttribute('aria-pressed', 'true');
+            btn.textContent = 'Hide tie points';
+            var legend = btn.parentNode.nextElementSibling;
+            legend.innerHTML = legendHtml();
+            legend.hidden = false;
+            // Bring the whole photograph into view, without zooming in.
+            var b = new maplibregl.LngLatBounds();
+            tiePoints.forEach(function (p) { b.extend([p.lon, p.lat]); });
+            canberraMap.fitBounds(b, { padding: 60, maxZoom: canberraMap.getZoom() });
+        }
+
+        function legendHtml() {
+            var kept = tiePoints.filter(function (p) { return p.k; }).length;
+            return '<span><i style="background:#1a9850"></i>within 4 m</span>' +
+                '<span><i style="background:#fee08b"></i>8 m</span>' +
+                '<span><i style="background:#d73027"></i>30 m or more</span>' +
+                '<span><i style="background:#ccc"></i>rejected</span>' +
+                '<span>' + kept.toLocaleString() + ' kept, ' + (tiePoints.length - kept).toLocaleString() + ' rejected</span>';
+        }
+
+        function clearTies() {
+            var src = canberraMap.getSource('ties');
+            if (src) src.setData({ type: 'FeatureCollection', features: [] });
+        }
+
+        function closeFrame() {
+            clearTies();
+            tiePoints = null;
+            shown = null;
+            if (popup) {
+                var p = popup;
+                popup = null;
+                p.remove();
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // The photograph itself, from GA, with its tie points where they fall
+        // ------------------------------------------------------------------
+        var photoBox = document.getElementById('photo');
+        var photoImg = document.getElementById('photo-img');
+        var photoSvg = document.getElementById('photo-svg');
+
+        async function openPhoto() {
+            var s = shown;
+            var record = await fetchJson(s.layer.sourceFrame.frameRecord.replace('{name}', s.frame.gfid));
+            var preview = record.assets.preview && record.assets.preview.href;
+            var scan = record.assets.scan;
+            document.getElementById('photo-title').textContent = s.frame.title + ' · ' + niceDate(s.frame.date);
+            photoSvg.innerHTML = '';
+            var caption = 'GA\'s preview of the photograph. ';
+            if (scan) {
+                caption += '<a href="' + esc(scan.href) + '" target="_blank" rel="noopener">The full scan</a>' +
+                    (record.properties['hap:scan_size'] ? ' is ' + esc(record.properties['hap:scan_size']) + '.' : '.');
+            }
+            if (s.layer.sourceFrame.ties && s.photo === 'preview') {
+                tiePoints = tiePoints || await loadTies();
+                drawPhotoTies();
+                caption += ' Dots are the tie points that placed it, coloured as on the map; faint ones were rejected.';
+            } else if (s.photo && s.photo !== 'preview') {
+                caption += ' This photograph was matched as a scan cropped to its fiducial marks, which GA\'s preview is not, so its tie points are shown on the map only.';
+            }
+            document.getElementById('photo-caption').innerHTML = caption;
+            photoImg.onload = placeSvg;
+            photoImg.src = preview;
+            photoImg.alt = s.frame.title;
+            photoBox.hidden = false;
+        }
+
+        function tieColour(r) {
+            var stops = [[0, '#1a9850'], [4, '#91cf60'], [8, '#fee08b'], [15, '#fc8d59'], [30, '#d73027']];
+            for (var i = stops.length - 1; i >= 0; i--) if (r >= stops[i][0]) return stops[i][1];
+            return stops[0][1];
+        }
+
+        function drawPhotoTies() {
+            // One dot per point is a lot of SVG for 4,000 points; most
+            // frames have under 2,000, and the browser copes.
+            var ns = 'http://www.w3.org/2000/svg';
+            photoSvg.setAttribute('viewBox', '0 0 1000 1000');
+            photoSvg.setAttribute('preserveAspectRatio', 'none');
+            tiePoints.forEach(function (p) {
+                if (p.x === null) return;
+                var c = document.createElementNS(ns, 'circle');
+                c.setAttribute('cx', (p.x * 1000).toFixed(1));
+                c.setAttribute('cy', (p.y * 1000).toFixed(1));
+                c.setAttribute('r', p.k ? 3.2 : 2.4);
+                c.setAttribute('fill', p.k ? tieColour(p.r) : '#ffffff');
+                c.setAttribute('fill-opacity', p.k ? 0.9 : 0.45);
+                c.setAttribute('vector-effect', 'non-scaling-stroke');
+                photoSvg.appendChild(c);
+            });
+        }
+
+        // Lay the dots exactly over the image as drawn.
+        function placeSvg() {
+            var frame = photoImg.parentNode.getBoundingClientRect();
+            var img = photoImg.getBoundingClientRect();
+            photoSvg.style.left = (img.left - frame.left) + 'px';
+            photoSvg.style.top = (img.top - frame.top) + 'px';
+            photoSvg.style.width = img.width + 'px';
+            photoSvg.style.height = img.height + 'px';
+        }
+        window.addEventListener('resize', function () { if (!photoBox.hidden) placeSvg(); });
+
+        function closePhoto() {
+            photoBox.hidden = true;
+            photoImg.removeAttribute('src');
+        }
+        document.getElementById('photo-close').addEventListener('click', closePhoto);
+        photoBox.addEventListener('click', function (e) { if (e.target === photoBox) closePhoto(); });
 
         // Reflect the starting handle position before the map finishes loading.
         updateHandle(BASE.year);
