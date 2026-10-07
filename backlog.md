@@ -13,6 +13,20 @@ What is in the bucket is in [docs/r2-inventory.md](docs/r2-inventory.md).
 - [x] Delete the misplaced SOC276 1980 COG and the preview-frame 1926 COG.
 - [ ] Delete the SOC195 1980 COG once a full-scan Blag Map 1980 replaces it.
 
+## A STAC catalog behind the map
+
+The design is in [docs/stac-plan.md](docs/stac-plan.md).
+The catalog itself lives in `~/hap-mosaics` on hectar.
+
+- [x] Catalog every mosaic in `~/hap-mosaics` as STAC, with a builder and a readable index.
+- [ ] Make `hap-mosaics` a Gitea repository, add the 1968 mosaic, and drop `hap:hapmap.sites`.
+- [ ] blag-map B51 and B52: keep tie-point residuals and GFIDs; nearest-neighbour overviews for `source_frame.tif`.
+- [ ] Add the original-grid Blag Map mosaics with `source_frame`, `overlap_count`, `frame_fit` and `tie_points`, and generate the frame records.
+- [ ] A publish script on hectar: upload what is missing, write the web catalog, report orphans, never delete.
+- [ ] `layers.yaml`, a build step that turns it into the timeline, a `dev` branch, and a Gitea remote.
+- [ ] The click popup: frame, date, link to its record, and the tie-point view.
+- [ ] Publish the catalog to `stac/` on R2, then STAC Browser at `/browse/`.
+
 ## Later
 
 - [ ] A Blag Map run of the 1955 CAC campaign against the 2004 and 2012 reference, to test the hand-corrected 1955 layer and perhaps replace it.
