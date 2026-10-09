@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#eef3f8"/>
+  <g fill="none" stroke="#16365c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- oblique aeroplane: fuselage + swept wings + tailfin, banking down-right -->
+    <path d="M14 22 L46 34 L40 37 L30 33 L22 38 L16 36 L22 30 L12 27 Z"/>
+    <path d="M30 33 L34 44 L30 43 L27 35"/>
+  </g>
+  <!-- view cone projecting down from the plane to the ground -->
+  <path d="M30 33 L20 54 L44 54 Z" fill="#f5a623" fill-opacity="0.35" stroke="#f5a623" stroke-width="2" stroke-dasharray="3 3" stroke-linejoin="round"/>
+</svg>

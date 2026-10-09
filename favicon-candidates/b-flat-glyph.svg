@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#16365c"/>
+  <!-- simplified oblique dart/plane shape -->
+  <path d="M12 24 L44 14 L36 28 L46 34 L34 34 L26 46 L22 36 L10 34 L22 30 Z" fill="#ffffff"/>
+  <!-- view cone as a solid triangle, accent colour, suggesting the camera footprint -->
+  <path d="M28 32 L18 52 L40 52 Z" fill="#f5a623"/>
+</svg>

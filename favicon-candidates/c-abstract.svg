@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="32" fill="#ffffff"/>
+  <g stroke="#16365c" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- chevron plane, nose pointing down-right (oblique) -->
+    <path d="M14 18 L32 30 L50 16"/>
+    <path d="M32 30 L32 20"/>
+  </g>
+  <!-- the view cone, narrowing from the plane to the ground -->
+  <g stroke="#f5a623" stroke-width="3.5" stroke-linecap="round" fill="none">
+    <path d="M32 30 L22 50"/>
+    <path d="M32 30 L42 50"/>
+  </g>
+</svg>
