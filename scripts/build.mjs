@@ -76,8 +76,6 @@ function layerFromItem(item, href, override) {
     const data = item.assets.data;
     const bands = (data['eo:bands'] || []).map((b) => b.common_name || b.name);
     const sf = item.assets.source_frame;
-    const fit = item.assets.frame_fit;
-    const ties = item.assets.tie_points;
     if (!data.href.startsWith(SITE)) {
         throw new Error(`${item.id}: its data is not on hapmap.app; publish it first`);
     }
@@ -103,14 +101,15 @@ function layerFromItem(item, href, override) {
         gray: !bands.includes('red'),
         record: browse(href),
         // Which photograph made each pixel, for a Blag Map mosaic.
+        // No tie_points/frame_fit here: tiepoints are never shown (spec), and the
+        // raw fit-accuracy numbers aren't surfaced in the UI either (dropped per Bill,
+        // commit abea1f8) -- so neither asset needs to reach the client at all.
         sourceFrame: sf ? {
             cog: local(sf.href),
             // [value, GFID, title, date], compact: 621 frames for 1968
             classes: sf['classification:classes'].map((c) => [c.value, c.name, c.title, c['hap:date']]),
             frameRecord: local(sf['hap:frame_href']),
             frameBrowse: browse(sf['hap:frame_href']),
-            fit: fit ? local(fit.href) : null,
-            ties: ties ? local(ties['hap:ties_href']) : null,
         } : null,
     };
 }
