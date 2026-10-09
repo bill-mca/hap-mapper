@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // A throwaway preview deployment for the spec-driven candidate branch
+  // (candidate/spec-pass). Not the production "hapmap" Worker and not the
+  // "hapmap-dev" ACT-imagery evaluation Worker (wrangler.dev.jsonc) — this is
+  // its own Worker so review of this branch can't collide with either.
+  "name": "hapmap-spec-candidate",
+  "main": "worker/cog-proxy.js",
+  "compatibility_date": "2025-09-27",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "hap-mapper-tiles",
+      "remote": true
+    }
+  ]
+}
