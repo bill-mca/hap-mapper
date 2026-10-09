@@ -1002,7 +1002,6 @@
         // ------------------------------------------------------------------
         var geotiff = null; // loaded on the first click
         var labelImages = new Map(); // COG path -> Promise<GeoTIFFImage>
-        var fits = new Map(); // frame_fit path -> Promise<JSON>
         var popup = null;
         var shown = null; // { layer, gfid } the popup is about
 
@@ -1077,23 +1076,11 @@
                 return '<div class="frame-pop"><p>No ' + esc(layer.label) + ' photograph covers this spot.</p></div>';
             }
             var frame = classFor(sf, value);
-            var fit = sf.fit ? (await cached(fits, sf.fit, function () { return fetchJson(sf.fit); })) : null;
-            var f = fit && fit.frames[frame.gfid];
-            shown = { layer: layer, frame: frame, fit: f, photo: fit && fit.photo };
+            shown = { layer: layer, frame: frame };
 
             var html = '<div class="frame-pop"><h4>' + esc(frame.title) + '</h4>' +
-                '<p class="muted">' + esc(niceDate(frame.date)) + '</p>';
-            if (f) {
-                html += '<p>Placed by ' + f.kept.toLocaleString() + ' of ' + f.points.toLocaleString() +
-                    ' points matched to ' + esc(fit.reference) + '; fits to about &plusmn;' + esc(Math.round(f.fit_m)) + ' m.</p>';
-                if (fit.reference_note) html += '<p class="muted">' + esc(fit.reference_note) + '</p>';
-                if (f.catalogue_offset_m !== null) {
-                    html += '<p>GA\'s catalogue had this photograph ' + esc(f.catalogue_offset_m.toLocaleString()) +
-                        ' m from where it belongs.</p>';
-                }
-                if (f.how_text) html += '<p class="muted">It was ' + esc(f.how_text) + '.</p>';
-            }
-            html += '<div class="actions">' +
+                '<p class="muted">' + esc(niceDate(frame.date)) + '</p>' +
+                '<div class="actions">' +
                 '<button type="button" data-act="photo">View photograph</button>' +
                 '<a class="btn" href="' + esc(sf.frameBrowse.replace('{name}', frame.gfid)) + '" target="_blank" rel="noopener">Record</a>' +
                 '</div></div>';
