@@ -24,6 +24,7 @@ layers:
   - act-1974-75-cas896-920-blag-3857
   - canberra-1980-soc276-279-blag-3857
   - act-1985-soc665-674-blag-3857
+  - act-1992-ausc317-324-blag-3857
 
 # The present day, always drawn underneath; not in the catalog.
 base:
