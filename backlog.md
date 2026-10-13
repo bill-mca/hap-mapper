@@ -13,7 +13,7 @@ What is in the bucket is in [docs/r2-inventory.md](docs/r2-inventory.md).
 - [x] Delete the misplaced SOC276 1980 COG and the preview-frame 1926 COG.
 - [ ] Delete the SOC195 1980 COG once a full-scan Blag Map 1980 replaces it.
 - [x] Detach `tiles.hapmap.app` from the bucket (14 October 2026).
-- [ ] Deploy `dev` so `hapmap-dev` shows the v2 1962–63 and 1990 mosaics, then delete the superseded v1 objects: four COGs, their four `source-frame` files and the eight leftover v1 records under `stac/` (1.44 GB).
+- [x] Deploy `dev` so `hapmap-dev` shows the v2 1962–63 and 1990 mosaics, then delete the superseded v1 objects: four COGs, their four `source-frame` files and the eight leftover v1 records under `stac/` (1.44 GB, 14 October 2026).
 
 ## A STAC catalog behind the map
 

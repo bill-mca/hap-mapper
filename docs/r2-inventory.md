@@ -62,6 +62,13 @@ The tie points are most of it: 154 MB as GeoParquet and 164 MB split by photogra
 
 The SOC195 1980 COG is still published, since the plan keeps it until a full-scan Blag Map 1980 replaces it, so `publish.py` does not count it an orphan.
 
+### Superseded 1962–63 and 1990 mosaics deleted (14 October 2026)
+
+The 1962–63 and 1990 Blag Map mosaics were each rebuilt as a `-v2`, and the catalog marked the first versions `publish: false`.
+Once `hapmap-dev` was showing the v2s, the sixteen v1 objects went: for each year, the 7855 and 3857 COGs, their two `source-frame` files, and the four records left under `stac/`.
+That freed 1.44 GB.
+No site, branch or catalog record referred to them.
+
 ## How Blag Map georeferences
 
 Six of the files come from Blag Map (`~/repos/blag-map`), so its method is described once here.
