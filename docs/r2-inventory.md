@@ -21,9 +21,10 @@ The proxy exists because Cloudflare will not serve byte ranges for objects over 
 
 Both were deployed on 7 October 2026.
 
-The bucket is also attached to the custom domain `tiles.hapmap.app`.
-The site does not use it; it is kept as a public handle on the bucket.
-A second domain, `tiles.hap-mapper.app`, was detached on 7 October 2026.
+The bucket has no public address of its own; it is reached only through the two Workers.
+It was once attached to two custom domains as public handles.
+`tiles.hap-mapper.app` was detached on 7 October 2026.
+`tiles.hapmap.app` was detached on 14 October 2026, after a week in which only scanners and robots asked it for anything.
 The bucket's public `r2.dev` URL is off.
 
 ## The bucket today
