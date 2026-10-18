@@ -38,7 +38,7 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 
 - [ ] hap-mosaics: `publish.py` writes `stac/web-items.json`, a slim ItemCollection of the Web Mercator items, linked from `catalog.json`.
 - [ ] hap-mosaics: mark the benchmark runs and mosaics (SOC195) to keep off the site.
-- [ ] Page: load `web-items.json`; for the chosen year, stack every mosaic in view from that year or before, newest year then finest on top, pruned once the view is covered.
+- [ ] Page: load `web-items.json`; for the chosen year, stack every mosaic in view from that year or before, newest year then finest on top; stop once the view is covered, and skip mosaics that add less than 2% of it.
 - [ ] Page: one dot per year with imagery in view; free slider; keys and play over the lit years.
 - [ ] Page: click and attribution taken from the drawn stack.
 - [ ] Retire `layers.yaml` and slim `scripts/build.mjs`.

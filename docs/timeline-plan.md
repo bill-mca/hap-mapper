@@ -23,8 +23,29 @@ Wherever a year-Y mosaic has imagery, it is what the visitor sees.
 Where it has none, the most recent earlier mosaic shows through, and below everything, the present day.
 Rule 3 then holds place by place, not just for the whole screen: at the opening view over Lake Burley Griffin in 1990, the 1990 mosaic covers two-thirds of the screen and 1985 fills the rest.
 
-The stack is pruned from the top down.
-Once the mosaics already drawn cover the whole view, nothing older is added, because nothing older could be seen and each layer costs tile requests.
+The stack is pruned from the top down, so the page loads little more raster than the visitor sees.
+Walking from the chosen year backwards, and from the finest mosaic to the coarsest within a year, the page:
+
+- stops as soon as the mosaics already drawn cover the whole view between them;
+- skips any mosaic that would add less than 2% of the view not already covered.
+
+The first rule does the work when zoomed in, where one mosaic usually fills the screen.
+The second does it when zoomed out, where no mosaic fills the screen and the first rule never fires.
+
+Tested on the real footprints for every year, with a 1280 × 800 screen:
+
+| view | layers drawn, average (most), with no pruning | after the first rule | after both |
+|---|---|---|---|
+| Civic, street level | 5.9 (13) | 1.1 (2) | 1.1 (2) |
+| Lake Burley Griffin, the opening view | 7.6 (16) | 2.4 (5) | 1.7 (3) |
+| Canberra, zoom 11 | 10.2 (21) | 4.6 (9) | 2.9 (4) |
+| The ACT, zoom 10 | 10.2 (21) | 10.2 (21) | 4.1 (8) |
+| The region, zoom 8.5 | 13.2 (25) | 13.2 (25) | 4.8 (9) |
+
+Some overfetch remains.
+A mosaic drawn under a partial one still fetches its tiles across the whole of its bounding box in view, including the part hidden above it.
+Because the page owns the `cog://` protocol handler, it could refuse a tile that the layers above it cover completely, and fetch only tiles that can be seen.
+That depends on how maplibre-cog-protocol names its tiles, and should be checked before it is relied on.
 
 The handle shows the chosen year.
 When older mosaics show through, the attribution line says so and names them, for instance "1985; 1983 in places".
