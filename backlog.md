@@ -32,15 +32,16 @@ The catalog itself lives in `~/hap-mosaics` on hectar.
 - [ ] Separate the 1944 and 1945 dots on the timeline: they overlap, so a click on 1944 lands on 1945.
 - [ ] Deploy `dev` to `hapmap-dev`, retiring the old gitignored `dev/index.html` and its ACTmapi evaluation layers once bilby has finished with them.
 
-## Every mosaic on the map, and a timeline that knows where you are
+## The page reads the catalog; the timeline shows any year
 
-The design is in [docs/timeline-plan.md](docs/timeline-plan.md); four questions in it wait on bilby.
+The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions in it wait on bilby.
 
-- [ ] hap-mosaics: record which Proof, Memory and Steel run is the one to show.
-- [ ] Build: take every Web Mercator item from the catalog, minus `layers.yaml`'s `exclude`, grouped into epochs, with footprints and pixel sizes.
-- [ ] Page: one MapLibre layer per mosaic, switched by epoch, with source `bounds` and `visibility: none` for hidden epochs.
-- [ ] Page: dim timeline dots by coverage of the view and by resolution; snapping, keys and play follow the lit epochs.
-- [ ] Page: click and attribution taken from the mosaics in view.
+- [ ] hap-mosaics: `publish.py` writes `stac/web-items.json`, a slim ItemCollection of the Web Mercator items, linked from `catalog.json`.
+- [ ] hap-mosaics: mark the benchmark runs and mosaics (SOC195) to keep off the site.
+- [ ] Page: load `web-items.json`; for the chosen year, stack every mosaic in view from that year or before, newest year then finest on top, pruned once the view is covered.
+- [ ] Page: one dot per year with imagery in view; free slider; keys and play over the lit years.
+- [ ] Page: click and attribution taken from the drawn stack.
+- [ ] Retire `layers.yaml` and slim `scripts/build.mjs`.
 
 ## Later
 

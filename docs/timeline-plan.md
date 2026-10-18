@@ -1,180 +1,98 @@
-# Plan: every Web Mercator mosaic on the map, and a timeline that knows where you are
+# Plan: the page reads the catalog, and the timeline shows any year
 
-Written 19 October 2026.
-This document imagines a hapmap.app that takes every Web Mercator mosaic from the STAC catalog by itself, and a timeline that dims the years with nothing to show where the map is looking.
-It follows the design ideals in bilby's `docs/specification.md` on `main`, and says where it has to interpret them.
+Written 19 October 2026, and rewritten the same day after bilby's decisions.
+This document says how hapmap.app can take its layers straight from the STAC catalog in the browser, and how a year on the timeline becomes every mosaic of that year, stacked.
+It departs on purpose from three rules in bilby's `docs/specification.md`: one layer a year, the midpoint date, and grey dots.
 Nothing here is built yet.
 
-## Where things stand
+## The rules, as bilby set them
 
-The public catalog holds 48 items, and 24 of them are Web Mercator COGs served from hapmap.app.
-The site shows 11, one per year, each named by hand in `layers.yaml`.
+1. A mosaic belongs to the year its flying **started**, so ACT 1962–63 is a 1962 mosaic.
+2. Choosing a year turns on **every** mosaic of that year with imagery in view, the sharpest on top.
+3. The slider can rest on **any** year, wherever the map is looking.
+   Where nothing was flown that year, the map shows the most recent earlier mosaic instead.
 
-The other 13 are these:
+## What the map draws
 
-- `canberra-1980-soc195-3857`, the sharp but badly placed ODM 1980 mosaic, which the plan has always meant to retire;
-- twelve Blag Map runs from the eight benchmark sites, Proof, Memory, Steel, Milk, Intent, Timber, Tower and Ink.
+For the chosen year Y, the page takes every mosaic in view that started in Y or before, and stacks them:
 
-The benchmark runs are what make this interesting.
-Four of them bring years the site has never had: 1940 (Ink, around Gungahlin and Sutton), 1950 (Milk, north towards Gunning), 1951 (Tower, south through Tuggeranong and Michelago) and 1959 (Steel, west to Burrinjuck).
-Timber reaches Cooma in 1944.
-Proof, Memory and Intent fly the same films as the 1944, 1974–75 and 1985 layers; Proof and Intent reach a little past them to the east, and Memory lies within.
+- newer years above older ones;
+- within a year, finer pixels above coarser ones.
 
-So the imagery is no longer a stack of Canberra-shaped layers.
-Each year covers a different patch of country, at a different sharpness, and a timeline that treats every year alike now misleads.
+Wherever a year-Y mosaic has imagery, it is what the visitor sees.
+Where it has none, the most recent earlier mosaic shows through, and below everything, the present day.
+Rule 3 then holds place by place, not just for the whole screen: at the opening view over Lake Burley Griffin in 1990, the 1990 mosaic covers two-thirds of the screen and 1985 fills the rest.
 
-## Choosing layers: the catalog decides, `layers.yaml` makes exceptions
+The stack is pruned from the top down.
+Once the mosaics already drawn cover the whole view, nothing older is added, because nothing older could be seen and each layer costs tile requests.
 
-The build takes every item that is:
+The handle shows the chosen year.
+When older mosaics show through, the attribution line says so and names them, for instance "1985; 1983 in places".
 
-- in EPSG:3857 (`proj:code`), with `hap:kind: web-cog`;
-- served from hapmap.app, so its `data` asset is under `https://hapmap.app/cog/`;
-- not marked as superseded.
+## The timeline
 
-`layers.yaml` stops being a list of what to show and becomes a short list of what to leave out:
+- One dot per year that has at least one mosaic in view, and no dot for any other year.
+- No grey dots, no lanes, and no pip per mosaic.
+- The handle moves freely, snapping to whole years, and the map changes as it passes each dot.
+- The arrow keys and the play button step through the dots that are lit.
 
-```yaml
-# Every Web Mercator mosaic in the catalog is shown, unless named here.
-exclude:
-  - canberra-1980-soc195-3857   # sharper, but worse placed and seamier; retire when a full-scan 1980 lands
-```
+With today's catalog the years are 1926, 1940, 1944, 1945, 1950, 1951, 1955, 1959, 1962, 1968, 1971, 1974, 1977, 1980, 1983, 1985, 1990 and 1992.
+1971, 1977 and 1983 arrived this morning with the Deputy, Forum and Puppy runs.
 
-This keeps the promise of the STAC plan, that dev and prod can differ only through this file.
-A new mosaic appears on the next deploy without anyone touching hap-mapper; withholding one from production is one line on `main`.
+## Reading the catalog from the browser
 
-The page could instead read the catalog when it loads, so a new mosaic would appear with no deploy at all.
-That would cost a few dozen requests on every visit, and dev and prod would no longer be kept apart, so I recommend keeping the list at build time.
+The catalog is static files, not a STAC API, so the page cannot ask it a question such as "what is in this box".
+It fetches the records and asks the question itself.
 
-### One run per benchmark site
+### As the catalog stands: 86 files
 
-Proof has two runs, and Memory and Steel three each.
-They cover the same ground from the same frames, so only the top one could ever be seen, and the browser would still fetch tiles for the others.
-The catalog cannot yet say which run is the one to show: their descriptions differ only in the run name.
-This needs a fact in `hap-mosaics`, such as `hap:preferred: true` on the chosen run in `mosaics.yaml`, or `deprecated: true` from STAC's version extension on the others.
-Until then the build would take the first run alphabetically, which is a guess.
+Walking it means the catalog, its 25 collections, and all 60 items, in three rounds of requests.
+That comes to about 770 kB gzipped.
+Half of it is the native-grid items, which the page cannot use but cannot tell apart until it has fetched them.
+Half of each Web Mercator item is the list of frames behind `source_frame`, which is needed only when someone clicks.
 
-## From items to epochs: one layer a year
+That works, with no change to the pipeline, but it is slow on a phone.
 
-The specification asks for at most one layer a year, and says that different layers have different extents.
-Once three mosaics fall in 1944, both can hold only if a timeline year is an *epoch*: one or more mosaics drawn together, each where it has data.
+### Recommended: one more file in the catalog
 
-The build groups the items like this:
+`publish.py` in hap-mosaics also writes `stac/web-items.json`: a STAC ItemCollection of every published Web Mercator item, with the frame lists left out, linked from `catalog.json`.
+For today's 25 Web Mercator items that file is 332 kB, or 68 kB gzipped, in one request.
+When someone clicks, the page fetches that one item's full record for its frame list, and keeps it.
 
-1. Each item's date is the midpoint of its flight dates, as the specification asks.
-2. Items whose flight dates overlap belong to one epoch, so Memory (15 December 1974) joins 1974–75 rather than making a 1974 of its own.
-3. Items whose midpoints fall in the same calendar year belong to one epoch, so Timber (March 1944) joins Proof and the ACT layer (December 1944).
-4. The epoch's label runs from its earliest flight to its latest: `1974–75`.
-   Its dot sits at the midpoint of the largest mosaic, so that the busy years stay where people expect them.
+The page still reads nothing but STAC: an ItemCollection is a standard STAC document, and STAC Browser and `pystac` read it too.
 
-Inside an epoch, each mosaic is drawn as its own MapLibre layer, and the order decides which one shows where two overlap.
-Mosaics with `hap:status: current` go on top, and benchmark runs (`reference`) underneath, where they fill the country the current mosaic does not reach.
-Among equals, the sharper mosaic goes on top.
+### What changes when the page reads the catalog
 
-With today's catalog that gives fifteen epochs, listed here with the top mosaic first:
+- **A new mosaic appears on the next page load**, with no build and no deploy, as soon as `publish.py` has run.
+  That is the point, and it is also a change: today a mosaic reaches dev first and production later.
+- **Dev and production read the same catalog**, so they can no longer differ in what they show.
+  If that is still wanted, a draft flag in `mosaics.yaml` could reach the catalog as `hap:status: draft`, which production skips and dev shows.
+- **`layers.yaml` goes**, apart from the present-day base layer, which can move into the page.
+  Anything to keep off the site, such as SOC195, is marked in `mosaics.yaml` instead, so the catalog stays the single record.
+- **`npm run build`** is left with copying the page and building STAC Browser.
 
-| epoch | mosaics, top first |
-|---|---|
-| 1926 | Canberra 1926 (1 m) |
-| 1940 | Ink (3 m) |
-| 1944 | ACT 1944 (5 m), Timber (2.5 m), Proof (4 m) |
-| 1945 | Canberra 1945 (0.5 m) |
-| 1950 | Milk (4 m) |
-| 1951 | Tower (5 m) |
-| 1955 | North Canberra 1955 (0.15 m) |
-| 1959 | Steel (5 m) |
-| 1962–63 | ACT 1962–63 (2.5 m) |
-| 1968 | ACT 1968 (3 m) |
-| 1974–75 | ACT 1974–75 (4 m), Memory (4 m) |
-| 1980 | Canberra 1980 (2.5 m) |
-| 1985 | ACT 1985 (2.5 m), Intent (2 m) |
-| 1990 | ACT 1990 (2.5 m) |
-| 1992 | ACT 1992 (3 m) |
+## In the page
 
-`layers.json` becomes a list of epochs, each holding its mosaics.
-Each mosaic carries what it carries now, plus its footprint and ground pixel size.
-The footprints, simplified to a few metres and rounded to five decimal places, come to a few tens of kilobytes in all.
-
-## The timeline knows where you are
-
-Each time the map stops moving, the page compares every epoch's footprints with the view, and gives each dot one of three looks:
-
-- **covered**: the epoch has imagery in view, sharp enough for this zoom: an ordinary dot;
-- **coarse**: it has imagery in view, but every mosaic there is coarser than the zoom can show: a hollow dot;
-- **not here**: nothing in view: a faint grey dot.
-
-"Coarse" means a ground pixel of the sharpest mosaic in view spans more than two screen pixels.
-At zoom 15 over Canberra a screen pixel is about 2 m, so a 2.5 m mosaic is fine and a 4 m one is coarse.
-
-The test needs no library.
-A grid of points across the view, eight by eight, is tested against each footprint, with a bounding-box check first; that is a few hundred thousand cheap sums, done once a pan.
-A footprint smaller than a grid cell is caught by also asking whether any of its corners lies in the view.
-
-Here is what the timeline would show in some sample views, worked out from the real footprints.
-A tilde marks a coarse epoch; a percentage, one that covers only part of the view.
-
-| view | zoom | epochs lit | which |
-|---|---|---|---|
-| Lake Burley Griffin, the opening view | 14 | 11 of 15 | 1926 (45%), 1944, 1945, 1955, 1962–63 (2%), 1968, 1974–75, 1980, 1985, 1990 (23%), 1992 |
-| Civic, street level | 18 | 10 | 1944~, 1945~, 1955, 1959~ (46%), 1968~, 1974–75~, 1980, 1985~, 1990~ (32%), 1992~ |
-| Gungahlin | 15 | 8 | 1940 (64%), 1959~, 1968, 1974–75~, 1980, 1985, 1990, 1992 |
-| Tharwa | 15 | 9 | 1944~ (16%), 1951~, 1962–63 (77%), 1968, 1974–75~, 1980 (88%), 1985 (82%), 1990 (93%), 1992 |
-| Cooma | 15 | 1 | 1944 |
-| Yass | 15 | 0 | none |
-
-Partial cover could earn a fourth look, such as a half-filled dot, but the specification asks for subtle cues and three is already plenty.
-
-### What the dimming changes
-
-- Dragging the handle snaps only to lit epochs, so a drag never lands on an empty map.
-- The arrow keys and the play button step only through lit epochs.
-- A grey dot can still be clicked.
-  It flies the map to that epoch's footprint, which turns the grey dots into a way of discovering where the old photographs are.
-- If the visitor pans off the edge of the epoch they are looking at, the page keeps it selected and lets the base map show through.
-  Jumping to another year without being asked would be more confusing than an empty patch.
-- When nothing at all is lit, as at Yass, the handle says so quietly: "No historical imagery here".
-
-## Fetching only what is seen
-
-Fifteen epochs make twenty-odd MapLibre sources, against eleven today.
-Two changes keep that from costing the visitor:
-
-- Every source gets its item's bounding box as `bounds`, so MapLibre never asks for a tile outside it.
-- Epochs that are not showing get `visibility: none` instead of opacity 0.
-  As I understand MapLibre, a layer at opacity 0 still fetches its tiles, so today every year downloads on every pan.
-  The fade can be kept for the epoch being left and the one arriving.
-  This needs measuring in a browser before it is relied on.
-
-## Clicking and attribution
-
-A click asks the active epoch's mosaics, top first, whether the point lies in their footprint, and queries the `source_frame` of the first that says yes.
-SOC195 has no `source_frame`, which is one more reason to leave it out.
-
-The specification asks for attribution that describes only the visible layers and links each to its STAC listing.
-The same coverage test gives that list: the mosaics of the active epoch that intersect the view.
+- One MapLibre source per mosaic, created when it first enters a stack and given its item's bounding box as `bounds`, so it never asks for tiles outside it.
+- A mosaic not in the current stack is set to `visibility: none`, not opacity 0, so it fetches nothing.
+- The coverage test needs no library: a grid of points across the view is tested against each footprint, after a bounding-box check.
+  It runs when the map stops moving and when the year changes.
+- A click asks the stack, from the top down, which mosaic has the point inside its footprint, and reads that mosaic's `source_frame`.
 
 ## Questions for bilby
 
-1. **Which benchmark run is shown** for Proof (a or b), Memory (a, b or c) and Steel (a, b or c)?
-   However it is decided, it should be recorded in `hap-mosaics`, not here.
-2. **Should benchmark runs fill in around the current mosaics?**
-   The recommendation is yes, underneath, so they add country without hiding the current layer.
-   The alternative is to show them only where no current mosaic exists in that year, which comes to the same thing on today's catalog.
-3. **Does SOC195 stay out?**
-   The recommendation is yes, as today.
-4. **Should a grey dot fly to its coverage when clicked**, or do nothing?
+1. **Which benchmark run is shown** where a site has several: Proof (a or b), Memory and Steel (a, b or c)?
+   The sharpest-on-top rule cannot choose between runs of equal pixel size.
+2. **SOC195 over the 1980 Blag Map mosaic?**
+   Under rule 2 its 0.25 m pixels put it on top across central Canberra, although it is worse placed.
+   The recommendation is to mark it as kept off the site.
+3. **Is losing the dev-first step acceptable**, or should drafts be flagged?
 
 ## Steps
 
-1. hap-mosaics: record the preferred benchmark runs.
-2. `scripts/build.mjs`: select items from the catalog, apply `exclude`, group them into epochs, and write footprints and pixel sizes into `layers.json`.
-3. `index.html`: one MapLibre layer per mosaic, switched by epoch, with `bounds` and `visibility`.
-4. `index.html`: the coverage test, the three dot styles, and snapping, keys and play that follow it.
-5. `index.html`: the click and the attribution, taken from the mosaics in view.
-6. Try it on `hapmap-dev`, at the sample views above and on a phone.
-
-## Not covered here
-
-- Dots that crowd one another: 1944 and 1945 sit a quarter of a year apart, and 1950 and 1951 not much more.
-  The backlog already has an item for 1944 and 1945; the same fix should serve both.
-- The specification's base layer is OpenStreetMap, and the site draws Esri World Imagery.
-- The specification says tie points are never shown, and the dev site has a button for them.
+1. hap-mosaics: `publish.py` writes `stac/web-items.json` and links it; `mosaics.yaml` marks runs and mosaics to keep off the site.
+2. hap-mapper: the page loads `web-items.json`, builds the year list, and draws the stack for the chosen year and view.
+3. hap-mapper: the timeline's dots follow the view; free slider; keys and play.
+4. hap-mapper: click and attribution from the drawn stack.
+5. hap-mapper: retire `layers.yaml` and slim `scripts/build.mjs`.
+6. Try it on `hapmap-dev` at Civic, Tharwa, Cooma and Yass, and on a phone.
