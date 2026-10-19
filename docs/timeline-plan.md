@@ -2,7 +2,8 @@
 
 Written 19 October 2026, and rewritten the same day after bilby's decisions.
 This document says how hapmap.app can take its layers straight from the STAC catalog in the browser, and how a year on the timeline becomes every mosaic of that year, stacked.
-It departs on purpose from three rules in bilby's `docs/specification.md`: one layer a year, the midpoint date, and grey dots.
+It departs on purpose from two rules in bilby's `docs/specification.md`: one layer a year, and the midpoint date.
+It also changes what a grey dot means; see the timeline below.
 Nothing here is built yet.
 
 ## The rules, as bilby set them
@@ -20,7 +21,8 @@ For the chosen year Y, the page takes every mosaic in view that started in Y or 
 - within a year, finer pixels above coarser ones.
 
 Wherever a year-Y mosaic has imagery, it is what the visitor sees.
-Where it has none, the most recent earlier mosaic shows through, and below everything, the present day.
+Where it has none, the most recent earlier mosaic shows through, and below everything, the OpenStreetMap street map.
+The present day shows only when it is the year chosen.
 Rule 3 then holds place by place, not just for the whole screen: at the opening view over Lake Burley Griffin in 1990, the 1990 mosaic covers two-thirds of the screen and 1985 fills the rest.
 
 The stack is pruned from the top down, so the page loads little more raster than the visitor sees.
@@ -53,7 +55,9 @@ When older mosaics show through, the attribution line says so and names them, fo
 ## The timeline
 
 - One dot per year that has at least one mosaic in view, and no dot for any other year.
-- No grey dots, no lanes, and no pip per mosaic.
+- A grey dot, for a year whose sharpest mosaic in view is coarser than the screen at this zoom (bilby, 19 October 2026).
+  The handle turns grey the same way when every mosaic drawn is coarser than the screen.
+- No lanes, and no pip per mosaic.
 - The handle moves freely, snapping to whole years, and the map changes as it passes each dot.
 - The arrow keys and the play button step through the dots that are lit.
 

@@ -47,6 +47,21 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 - [ ] Cull tiles hidden under the layers above, once a culled tile can be reloaded when the stack changes.
 - [ ] Promote to production: a pull request from `dev` into `main`.
 
+## The spec-candidate features, on dev
+
+Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 2026).
+
+- [x] Bring bilby's `docs/specification.md` and `CLAUDE.md` onto `dev`.
+- [x] No tie points anywhere, and a popup with just the photograph's name, date, "View photograph" and its record.
+- [x] Clicking the preview opens it in a new tab; the caption links the full scan.
+- [x] The subtitle, in the title card and the page description.
+- [x] A search box at the top: MapLibre's geocoder plugin asking Nominatim.
+- [x] OpenStreetMap under every year; the present day only in 2025.
+- [x] A credit line for only what is on screen, linking each mosaic's catalog record.
+- [x] Grey dots for years zoomed in past their sharpest mosaic in view, and a grey handle when everything drawn is.
+- [ ] bilby: the favicon.
+- [ ] The spec's unobtrusive "Loading…" overlay, which neither branch has yet.
+
 ## Later
 
 - [ ] A Blag Map run of the 1955 CAC campaign against the 2004 and 2012 reference, to test the hand-corrected 1955 layer and perhaps replace it.

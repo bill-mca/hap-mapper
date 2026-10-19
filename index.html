@@ -4,12 +4,17 @@
     <title>Hap-Map - Time travel over North Canberra</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Exploring Australia's historical aerial photography">
 
     <!-- MapLibre GL CSS/JS. MapLibre is a WebGL map engine; unlike Leaflet it
          renders rasters on the GPU, which gives smooth raster-opacity
          crossfades for free. Every historical layer is a Web Mercator COG. -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
     <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+
+    <!-- MapLibre's own search box, here asking Nominatim for places -->
+    <link rel="stylesheet" href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.9.4/dist/maplibre-gl-geocoder.css" />
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.9.4/dist/maplibre-gl-geocoder.js"></script>
 
     <style type="text/css">
         :root {
@@ -34,12 +39,22 @@
             background: #0b1622;
         }
 
-        /* ---- Title card (top left, under the nav controls) ---- */
-        #title-card {
+        /* ---- Along the top: the title card, then the search box, which
+           drops below the title card when the two do not fit side by side ---- */
+        #top {
             position: absolute;
             top: 10px;
             left: 54px;
+            right: calc(var(--timeline-width) + 10px);
             z-index: 5;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        #title-card {
             background: var(--hap-navy);
             color: #fff;
             padding: 8px 14px;
@@ -53,6 +68,39 @@
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.3px;
+        }
+
+        #title-card .titles {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        #subtitle {
+            margin: 0;
+            font-size: 10px;
+            opacity: 0.85;
+            letter-spacing: 0.2px;
+        }
+
+        /* ---- Search, centred in the room the title card leaves ---- */
+        #search {
+            margin: 0 auto;
+            max-width: 100%;
+            pointer-events: auto;
+        }
+
+        #search .maplibregl-ctrl-geocoder {
+            width: 240px;
+            min-width: 0;
+            max-width: 100%;
+            font-size: 13px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        /* The plugin draws its own clear button */
+        #search input::-webkit-search-cancel-button {
+            -webkit-appearance: none;
         }
 
         /* ---- Timeline (right edge, topotijdreis style) ---- */
@@ -153,6 +201,11 @@
             display: none;
         }
 
+        /* A year whose sharpest imagery in view is coarser than the screen */
+        .year-dot.coarse {
+            background: #a3adba;
+        }
+
         /* Draggable year handle */
         #handle {
             position: absolute;
@@ -177,6 +230,11 @@
             transform: translate(-50%, -50%) scale(1.12);
         }
 
+        /* Zoomed in past what the photographs on screen can show */
+        #handle.coarse {
+            background: #6e7c8e;
+        }
+
         /* ---- About this layer (opens from the title card) ---- */
         #title-card {
             pointer-events: auto;
@@ -185,8 +243,8 @@
             align-items: center;
             gap: 4px 10px;
             box-sizing: border-box;
-            /* Clear of the timeline, wrapping when "Showing …" is long */
-            max-width: calc(100vw - var(--timeline-width) - 64px);
+            /* Wrapping when "Showing …" is long */
+            max-width: 100%;
         }
 
         #showing {
@@ -320,25 +378,7 @@
             color: #fff;
         }
 
-        .legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px 10px;
-            margin-top: 6px;
-            font-size: 11px;
-            color: #54657c;
-        }
-
-        .legend i {
-            display: inline-block;
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            margin-right: 3px;
-            vertical-align: -1px;
-        }
-
-        /* ---- The photograph, with its tie points ---- */
+        /* ---- The photograph ---- */
         #photo {
             position: fixed;
             inset: 0;
@@ -385,7 +425,6 @@
         }
 
         #photo .frame {
-            position: relative;
             min-height: 0;
             flex: 1;
             display: flex;
@@ -397,20 +436,31 @@
             max-width: 100%;
             max-height: calc(94vh - 120px);
             object-fit: contain;
-        }
-
-        #photo svg {
-            position: absolute;
-            pointer-events: none;
+            cursor: zoom-in;
         }
 
         #photo figcaption {
             margin-top: 8px;
         }
 
-        /* Keep MapLibre attribution clear of the timeline */
-        .maplibregl-ctrl-bottom-right {
+        /* ---- Attribution: only what is on screen ---- */
+        #attribution {
+            position: absolute;
+            bottom: 0;
             right: var(--timeline-width);
+            z-index: 4;
+            max-width: calc(100vw - var(--timeline-width));
+            box-sizing: border-box;
+            padding: 2px 8px;
+            border-top-left-radius: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #1d2733;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #attribution a {
+            color: inherit;
         }
 
         @media (max-width: 600px) {
@@ -420,6 +470,10 @@
 
             #title-card h1 {
                 font-size: 13px;
+            }
+
+            #subtitle {
+                display: none;
             }
 
             /* "1974–75" must fit the narrower timeline */
@@ -435,15 +489,26 @@
     <!-- Map Container -->
     <div id="map"></div>
 
-    <!-- Title card -->
-    <div id="title-card">
-        <h1>Hap-Map</h1>
-        <span id="showing" hidden></span>
-        <button id="info-btn" type="button" aria-expanded="false" aria-controls="layer-info">About this layer</button>
+    <!-- Along the top: the title card and the search box -->
+    <div id="top">
+        <div id="title-card">
+            <div class="titles">
+                <h1>Hap-Map</h1>
+                <p id="subtitle">Exploring Australia's historical aerial photography</p>
+            </div>
+            <span id="showing" hidden></span>
+            <button id="info-btn" type="button" aria-expanded="false" aria-controls="layer-info">About this layer</button>
+        </div>
+
+        <!-- Search for a present-day place -->
+        <div id="search"></div>
     </div>
     <section id="layer-info" hidden aria-live="polite"></section>
 
-    <!-- A photograph and its tie points, opened from the click popup -->
+    <!-- Credits for what is on screen -->
+    <div id="attribution"></div>
+
+    <!-- A photograph, opened from the click popup -->
     <div id="photo" hidden role="dialog" aria-modal="true" aria-labelledby="photo-title">
         <figure>
             <header>
@@ -451,8 +516,7 @@
                 <button id="photo-close" type="button" aria-label="Close">&times;</button>
             </header>
             <div class="frame">
-                <img id="photo-img" alt="">
-                <svg id="photo-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+                <a id="photo-link" target="_blank" rel="noopener" title="Open the photograph in a new tab"><img id="photo-img" alt=""></a>
             </div>
             <figcaption id="photo-caption"></figcaption>
         </figure>
@@ -554,8 +618,6 @@
             var data = item.assets.data;
             var bands = (data['eo:bands'] || []).map(function (b) { return b.common_name || b.name; });
             var sf = item.assets.source_frame;
-            var fit = item.assets.frame_fit;
-            var ties = item.assets.tie_points;
             var self = (item.links.find(function (l) { return l.rel === 'self'; }) || { href: href }).href;
             return {
                 id: item.id,
@@ -586,9 +648,7 @@
                     cog: local(sf.href),
                     classes: sf['classification:classes'] ? compactClasses(sf['classification:classes']) : null,
                     frameRecord: local(sf['hap:frame_href']),
-                    frameBrowse: browse(sf['hap:frame_href']),
-                    fit: fit ? local(fit.href) : null,
-                    ties: ties ? local(ties['hap:ties_href']) : null
+                    frameBrowse: browse(sf['hap:frame_href'])
                 } : null
             };
         }
@@ -648,9 +708,9 @@
         var EXCLUDE = new Set(SITE.exclude || []);
         var mosaicsLoaded = loadMosaics();
 
-        // Every historical layer is GA's photography under CC BY 4.0. One
-        // string for all of them, so MapLibre shows the credit once.
-        var GA_CREDIT = '&copy; cc-by Image data derived from Geoscience Australia\'s <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography">historical aerial photography collection</a>';
+        // Every historical layer is GA's photography under CC BY 4.0, made
+        // into a mosaic by the hapmap project, also CC BY 4.0.
+        var GA_CREDIT = 'Photographs &copy; <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography" target="_blank" rel="noopener">Geoscience Australia</a>, CC BY 4.0';
 
         // A single-band panchromatic COG needs this colour function: NoData
         // (0) and alpha 0 are transparent, anything else is grey. RGB COGs
@@ -665,8 +725,12 @@
             }
         }
 
-        // The present day, always drawn underneath.
+        // The present day, the newest year on the timeline.
         var BASE = Object.assign({}, SITE.base, { layerId: 'imagery-base', label: String(SITE.base.year) });
+
+        // The street map under every year, showing wherever the year on
+        // screen has no imagery. It is not on the timeline.
+        var BACKDROP = SITE.backdrop;
 
         var MOSAICS = []; // every mosaic shown, oldest first
         var YEARS = []; // the years they start in
@@ -699,21 +763,66 @@
             trackUserLocation: true,
             fitBoundsOptions: { maxZoom: 15 }
         }), 'top-left');
-        canberraMap.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
+        // ------------------------------------------------------------------
+        // Search for a present-day place. MapLibre's geocoder plugin asks
+        // Nominatim only when Enter is pressed, as Nominatim's usage policy
+        // requires, and flies to the place it picks.
+        // ------------------------------------------------------------------
+        var nominatim = {
+            forwardGeocode: async function (config) {
+                var url = 'https://nominatim.openstreetmap.org/search?format=geojson&countrycodes=au&limit=5&q=' +
+                    encodeURIComponent(config.query);
+                var geojson = await fetchJson(url);
+                return {
+                    type: 'FeatureCollection',
+                    features: geojson.features.map(function (f) {
+                        var b = f.bbox;
+                        var center = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+                        return {
+                            type: 'Feature',
+                            geometry: { type: 'Point', coordinates: center },
+                            center: center,
+                            bbox: b,
+                            place_name: f.properties.display_name,
+                            text: f.properties.display_name,
+                            place_type: ['place'],
+                            properties: f.properties
+                        };
+                    })
+                };
+            }
+        };
+        var geocoder = new MaplibreGeocoder(nominatim, {
+            placeholder: 'Search a place',
+            flyTo: { maxZoom: 16 },
+            marker: false,
+            enableEventLogging: false
+        });
+        document.getElementById('search').appendChild(geocoder.onAdd(canberraMap));
 
-        // The base layer goes in first, at the bottom; the mosaics are added
-        // above it as they are first needed, and the timeline is built once
-        // the catalog has been read.
+        // The street map goes in first, at the bottom, then the present day
+        // above it; the mosaics are added above both as they are first
+        // needed, and the timeline is built once the catalog has been read.
         canberraMap.on('load', async function () {
+            canberraMap.addSource('backdrop', {
+                type: 'raster',
+                tiles: [BACKDROP.tiles],
+                tileSize: BACKDROP.tileSize,
+                maxzoom: BACKDROP.maxzoom
+            });
+            canberraMap.addLayer({ id: 'backdrop', type: 'raster', source: 'backdrop' });
             canberraMap.addSource(BASE.layerId, {
                 type: 'raster',
                 tiles: [BASE.tiles],
                 tileSize: BASE.tileSize,
-                maxzoom: BASE.maxzoom,
-                attribution: BASE.attribution
+                maxzoom: BASE.maxzoom
             });
-            canberraMap.addLayer({ id: BASE.layerId, type: 'raster', source: BASE.layerId });
-            addTieLayers();
+            canberraMap.addLayer({
+                id: BASE.layerId,
+                type: 'raster',
+                source: BASE.layerId,
+                paint: { 'raster-opacity-transition': { duration: FADE_MS, delay: 0 } }
+            });
 
             MOSAICS = await mosaicsLoaded;
             YEARS = Array.from(new Set(MOSAICS.map(function (m) { return m.year; })));
@@ -798,8 +907,7 @@
             canberraMap.addSource(m.layerId, {
                 type: 'raster',
                 url: 'cog://' + url,
-                tileSize: 512,
-                attribution: GA_CREDIT
+                tileSize: 512
             });
             canberraMap.addLayer({
                 id: m.layerId,
@@ -810,30 +918,42 @@
                     'raster-opacity': 0,
                     'raster-opacity-transition': { duration: FADE_MS, delay: 0 }
                 }
-            }, 'ties-rejected');
+            });
+        }
+
+        // Fade a layer in, or fade it out and then hide it, so it fetches
+        // nothing more.
+        function fade(layer, on) {
+            clearTimeout(layer.hideTimer);
+            if (on) {
+                canberraMap.setLayoutProperty(layer.layerId, 'visibility', 'visible');
+                canberraMap.setPaintProperty(layer.layerId, 'raster-opacity', 1);
+            } else {
+                canberraMap.setPaintProperty(layer.layerId, 'raster-opacity', 0);
+                layer.hideTimer = setTimeout(function () {
+                    canberraMap.setLayoutProperty(layer.layerId, 'visibility', 'none');
+                }, FADE_MS);
+            }
         }
 
         // Layers joining the stack fade in, in stack order; layers leaving it
-        // fade out and are then hidden, so they fetch nothing more.
+        // fade out. The present day shows only when it is the year chosen;
+        // under any other year the street map shows through instead.
         function drawStack() {
             var next = stackFor(activeYear);
             var leaving = stack.filter(function (m) { return next.indexOf(m) < 0; });
             stack = next;
             next.slice().reverse().forEach(function (m) {
                 ensureLayer(m);
-                clearTimeout(m.hideTimer);
-                canberraMap.moveLayer(m.layerId, 'ties-rejected');
-                canberraMap.setLayoutProperty(m.layerId, 'visibility', 'visible');
-                canberraMap.setPaintProperty(m.layerId, 'raster-opacity', 1);
+                canberraMap.moveLayer(m.layerId);
+                fade(m, true);
             });
-            leaving.forEach(function (m) {
-                canberraMap.setPaintProperty(m.layerId, 'raster-opacity', 0);
-                m.hideTimer = setTimeout(function () {
-                    canberraMap.setLayoutProperty(m.layerId, 'visibility', 'none');
-                }, FADE_MS);
-            });
+            leaving.forEach(function (m) { fade(m, false); });
+            fade(BASE, activeYear >= BASE.year);
             renderShowing();
             renderLayerInfo();
+            renderCoarse();
+            renderAttribution();
         }
 
         // For looking from the browser console: hapmap.stack() lists what is drawn.
@@ -867,6 +987,45 @@
             }
             showingEl.textContent = text;
             showingEl.hidden = !text;
+        }
+
+        // Ground metres across one screen pixel at the centre of the map.
+        // MapLibre's world is 512 pixels wide at zoom 0.
+        function metresPerPixel() {
+            var lat = canberraMap.getCenter().lat * Math.PI / 180;
+            return 40075016.686 * Math.cos(lat) / (512 * Math.pow(2, canberraMap.getZoom()));
+        }
+
+        // The handle turns grey when every photograph drawn is coarser than
+        // the screen: zoomed in past what they can show.
+        function renderCoarse() {
+            var mpp = metresPerPixel();
+            var coarse = stack.length > 0 && stack.every(function (m) { return m.gsd > mpp; });
+            handle.classList.toggle('coarse', coarse);
+            handle.title = coarse ? 'Zoomed in past the photographs here: each of their pixels is wider than a pixel of your screen' : '';
+        }
+
+        // ------------------------------------------------------------------
+        // Attribution, for only what is on screen: a link to the catalog
+        // record of each mosaic drawn, GA's credit for the photographs, and
+        // the present day or the street map wherever either shows.
+        // ------------------------------------------------------------------
+        var attributionEl = document.getElementById('attribution');
+
+        function renderAttribution() {
+            var parts = [];
+            if (stack.length) {
+                parts.push('Mosaics ' + stack.map(function (m) {
+                    return '<a href="' + esc(m.record) + '" target="_blank" rel="noopener" title="' + esc(m.title) + '">' + esc(m.label) + '</a>';
+                }).join(', ') + ' by hapmap, CC BY 4.0');
+                parts.push(GA_CREDIT);
+            }
+            if (activeYear >= BASE.year) {
+                parts.push(BASE.attribution);
+            } else if (samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); })) {
+                parts.push(BACKDROP.attribution);
+            }
+            attributionEl.innerHTML = parts.join(' &middot; ');
         }
 
         // ------------------------------------------------------------------
@@ -937,13 +1096,20 @@
         }
 
         // A year keeps its dot while any of its mosaics has imagery in view.
+        // The dot is grey when even the sharpest of them is coarser than the
+        // screen, so zooming in past it would show only bigger pixels.
         function updateDots() {
-            var lit = new Set([BASE.year]);
+            var sharpest = new Map([[BASE.year, 0]]); // year -> finest gsd in view
             MOSAICS.forEach(function (m) {
-                if (!lit.has(m.year) && samples.some(function (p) { return covers(m, p); })) lit.add(m.year);
+                if (sharpest.has(m.year) && sharpest.get(m.year) <= m.gsd) return;
+                if (samples.some(function (p) { return covers(m, p); })) sharpest.set(m.year, m.gsd);
             });
-            dots.forEach(function (dot, year) { dot.hidden = !lit.has(year); });
-            litYears = Array.from(lit).sort(function (a, b) { return a - b; });
+            var mpp = metresPerPixel();
+            dots.forEach(function (dot, year) {
+                dot.hidden = !sharpest.has(year);
+                dot.classList.toggle('coarse', sharpest.get(year) > mpp);
+            });
+            litYears = Array.from(sharpest.keys()).sort(function (a, b) { return a - b; });
         }
 
         function updateHandle(year) {
@@ -1007,6 +1173,7 @@
                 closePhoto();
                 return;
             }
+            if (e.target.closest('input')) return; // the arrows belong to the search box there
             var year = e.key === 'ArrowUp' ? nextLitYear(1) : e.key === 'ArrowDown' ? nextLitYear(-1) : null;
             if (year !== null) setYear(year);
         });
@@ -1049,6 +1216,8 @@
 
         infoBtn.addEventListener('click', function () {
             var open = infoPanel.hidden;
+            // Below the title card and the search box, wherever it has wrapped to
+            infoPanel.style.top = (document.getElementById('top').getBoundingClientRect().bottom + 6) + 'px';
             infoPanel.hidden = !open;
             infoBtn.setAttribute('aria-expanded', String(open));
             renderLayerInfo();
@@ -1088,16 +1257,20 @@
 
         function renderLayerInfo() {
             if (infoPanel.hidden) return;
+            if (!stack.length && activeYear < BASE.year) {
+                infoPanel.innerHTML = '<h2>' + esc(BACKDROP.title) + '</h2><p>' + esc(BACKDROP.description) + '</p>' +
+                    '<p class="hint">There are no photographs of this view from ' + esc(activeYear) +
+                    ' or before. Move the timeline forward, or the map elsewhere.</p>';
+                return;
+            }
             if (!stack.length) {
                 infoPanel.innerHTML = '<h2>' + esc(BASE.label) + ': ' + esc(BASE.title) + '</h2><p>' + esc(BASE.description) + '</p>' +
-                    '<p class="hint">' + (activeYear < BASE.year
-                        ? 'There are no photographs of this view from ' + esc(activeYear) + ' or before. Move the timeline forward, or the map elsewhere.'
-                        : 'Move the timeline back to see Canberra from the air in earlier years.') + '</p>';
+                    '<p class="hint">Move the timeline back to see Canberra from the air in earlier years.</p>';
                 return;
             }
             var html = stack.map(mosaicInfo).join('<hr>');
             if (stack.some(function (l) { return l.sourceFrame; })) {
-                html += '<p class="hint">Click anywhere on the map to see which photograph that spot came from, when it was taken, and how it was put in place.</p>';
+                html += '<p class="hint">Click anywhere on the map to see which photograph that spot came from and when it was taken.</p>';
             }
             infoPanel.innerHTML = html + '<p class="muted">Photography &copy; Geoscience Australia, CC BY 4.0. ' +
                 '<a href="/browse/" target="_blank" rel="noopener">Browse the catalog</a></p>';
@@ -1123,13 +1296,12 @@
         }
 
         // ------------------------------------------------------------------
-        // Click a spot: which photograph made it, and how that photograph was
-        // placed. Blag Map records the source frame of every pixel; the map
-        // reads one pixel of that raster with a single range request.
+        // Click a spot: which photograph made it. Blag Map records the
+        // source frame of every pixel; the map reads one pixel of that raster
+        // with a single range request.
         // ------------------------------------------------------------------
         var geotiff = null; // loaded on the first click
         var labelImages = new Map(); // COG path -> Promise<GeoTIFFImage>
-        var fits = new Map(); // frame_fit path -> Promise<JSON>
         var records = new Map(); // item path -> Promise<JSON>
         var popup = null;
         var shown = null; // { layer, gfid } the popup is about
@@ -1181,7 +1353,6 @@
             closeFrame();
             popup = new maplibregl.Popup({ maxWidth: '320px' }).setLngLat(e.lngLat)
                 .setHTML('<div class="frame-pop"><p class="muted">Looking…</p></div>').addTo(canberraMap);
-            popup.on('close', clearTies);
             var mine = popup;
             try {
                 var html = layer.sourceFrame ? await framePopup(layer, e.lngLat) : layerPopup(layer);
@@ -1210,109 +1381,23 @@
             if (!frame) {
                 return '<div class="frame-pop"><p>The ' + esc(layer.label) + ' mosaic does not say which photograph made this spot.</p></div>';
             }
-            var fit = sf.fit ? (await cached(fits, sf.fit, function () { return fetchJson(sf.fit); })) : null;
-            var f = fit && fit.frames[frame.gfid];
-            shown = { layer: layer, frame: frame, fit: f, photo: fit && fit.photo };
-
-            var html = '<div class="frame-pop"><h4>' + esc(frame.title) + '</h4>' +
-                '<p class="muted">' + esc(niceDate(frame.date)) + '</p>';
-            if (f) {
-                html += '<p>Placed by ' + f.kept.toLocaleString() + ' of ' + f.points.toLocaleString() +
-                    ' points matched to ' + esc(fit.reference) + '; fits to about &plusmn;' + esc(Math.round(f.fit_m)) + ' m.</p>';
-                if (fit.reference_note) html += '<p class="muted">' + esc(fit.reference_note) + '</p>';
-                if (f.catalogue_offset_m !== null) {
-                    html += '<p>GA\'s catalogue had this photograph ' + esc(f.catalogue_offset_m.toLocaleString()) +
-                        ' m from where it belongs.</p>';
-                }
-                if (f.how_text) html += '<p class="muted">It was ' + esc(f.how_text) + '.</p>';
-            }
-            html += '<div class="actions">' +
-                (sf.ties ? '<button type="button" data-act="ties" aria-pressed="false">Show tie points</button>' : '') +
+            shown = { layer: layer, frame: frame };
+            return '<div class="frame-pop"><h4>' + esc(frame.title) + '</h4>' +
+                '<p class="muted">' + esc(niceDate(frame.date)) + '</p>' +
+                '<div class="actions">' +
                 '<button type="button" data-act="photo">View photograph</button>' +
                 '<a class="btn" href="' + esc(sf.frameBrowse.replace('{name}', frame.gfid)) + '" target="_blank" rel="noopener">Record</a>' +
-                '</div><div class="legend" hidden></div></div>';
-            return html;
+                '</div></div>';
         }
 
-        // The popup's buttons, delegated so they survive setHTML.
+        // The popup's button, delegated so it survives setHTML.
         document.getElementById('map').addEventListener('click', function (e) {
             var btn = e.target.closest('.frame-pop [data-act]');
             if (!btn || !shown) return;
-            if (btn.dataset.act === 'ties') toggleTies(btn);
             if (btn.dataset.act === 'photo') openPhoto();
         });
 
-        // ------------------------------------------------------------------
-        // Tie points on the map, coloured by how well each fits
-        // ------------------------------------------------------------------
-        var TIE_COLOURS = ['interpolate', ['linear'], ['get', 'r'], 0, '#1a9850', 4, '#91cf60', 8, '#fee08b', 15, '#fc8d59', 30, '#d73027'];
-        var tiePoints = null; // the frame's points, for the photograph too
-
-        function addTieLayers() {
-            canberraMap.addSource('ties', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-            canberraMap.addLayer({
-                id: 'ties-rejected', type: 'circle', source: 'ties', filter: ['==', ['get', 'k'], 0],
-                paint: { 'circle-radius': 2.5, 'circle-color': '#ffffff', 'circle-opacity': 0.45, 'circle-stroke-width': 0 }
-            });
-            canberraMap.addLayer({
-                id: 'ties-kept', type: 'circle', source: 'ties', filter: ['==', ['get', 'k'], 1],
-                paint: { 'circle-radius': 3, 'circle-color': TIE_COLOURS, 'circle-stroke-color': '#0b1622', 'circle-stroke-width': 0.5 }
-            });
-        }
-
-        async function loadTies() {
-            var url = shown.layer.sourceFrame.ties.replace('{name}', shown.frame.gfid);
-            var t = await fetchJson(url);
-            return t.points.map(function (p) {
-                return { lon: p[0], lat: p[1], r: p[2], k: p[3], x: p[4], y: p[5] };
-            });
-        }
-
-        async function toggleTies(btn) {
-            var on = btn.getAttribute('aria-pressed') !== 'true';
-            if (!on) {
-                clearTies();
-                btn.setAttribute('aria-pressed', 'false');
-                btn.textContent = 'Show tie points';
-                btn.parentNode.nextElementSibling.hidden = true;
-                return;
-            }
-            btn.textContent = 'Loading…';
-            tiePoints = tiePoints || await loadTies();
-            canberraMap.getSource('ties').setData({
-                type: 'FeatureCollection',
-                features: tiePoints.map(function (p) {
-                    return { type: 'Feature', geometry: { type: 'Point', coordinates: [p.lon, p.lat] }, properties: { r: p.r, k: p.k } };
-                })
-            });
-            btn.setAttribute('aria-pressed', 'true');
-            btn.textContent = 'Hide tie points';
-            var legend = btn.parentNode.nextElementSibling;
-            legend.innerHTML = legendHtml();
-            legend.hidden = false;
-            // Bring the whole photograph into view, without zooming in.
-            var b = new maplibregl.LngLatBounds();
-            tiePoints.forEach(function (p) { b.extend([p.lon, p.lat]); });
-            canberraMap.fitBounds(b, { padding: 60, maxZoom: canberraMap.getZoom() });
-        }
-
-        function legendHtml() {
-            var kept = tiePoints.filter(function (p) { return p.k; }).length;
-            return '<span><i style="background:#1a9850"></i>within 4 m</span>' +
-                '<span><i style="background:#fee08b"></i>8 m</span>' +
-                '<span><i style="background:#d73027"></i>30 m or more</span>' +
-                '<span><i style="background:#ccc"></i>rejected</span>' +
-                '<span>' + kept.toLocaleString() + ' kept, ' + (tiePoints.length - kept).toLocaleString() + ' rejected</span>';
-        }
-
-        function clearTies() {
-            var src = canberraMap.getSource('ties');
-            if (src) src.setData({ type: 'FeatureCollection', features: [] });
-        }
-
         function closeFrame() {
-            clearTies();
-            tiePoints = null;
             shown = null;
             if (popup) {
                 var p = popup;
@@ -1322,11 +1407,12 @@
         }
 
         // ------------------------------------------------------------------
-        // The photograph itself, from GA, with its tie points where they fall
+        // The photograph itself, from GA. Clicking it opens it in a new tab;
+        // the caption links the full scan, where GA has one.
         // ------------------------------------------------------------------
         var photoBox = document.getElementById('photo');
         var photoImg = document.getElementById('photo-img');
-        var photoSvg = document.getElementById('photo-svg');
+        var photoLink = document.getElementById('photo-link');
 
         async function openPhoto() {
             var s = shown;
@@ -1334,61 +1420,17 @@
             var preview = record.assets.preview && record.assets.preview.href;
             var scan = record.assets.scan;
             document.getElementById('photo-title').textContent = s.frame.title + ' · ' + niceDate(s.frame.date);
-            photoSvg.innerHTML = '';
             var caption = 'GA\'s preview of the photograph. ';
             if (scan) {
-                caption += '<a href="' + esc(scan.href) + '" target="_blank" rel="noopener">The full scan</a>' +
-                    (record.properties['hap:scan_size'] ? ' is ' + esc(record.properties['hap:scan_size']) + '.' : '.');
-            }
-            if (s.layer.sourceFrame.ties && s.photo === 'preview') {
-                tiePoints = tiePoints || await loadTies();
-                drawPhotoTies();
-                caption += ' Dots are the tie points that placed it, coloured as on the map; faint ones were rejected.';
-            } else if (s.photo && s.photo !== 'preview') {
-                caption += ' This photograph was matched as a scan cropped to its fiducial marks, which GA\'s preview is not, so its tie points are shown on the map only.';
+                caption += '<a href="' + esc(scan.href) + '" target="_blank" rel="noopener">Download the full scan</a>' +
+                    (record.properties['hap:scan_size'] ? ' (' + esc(record.properties['hap:scan_size']) + ').' : '.');
             }
             document.getElementById('photo-caption').innerHTML = caption;
-            photoImg.onload = placeSvg;
             photoImg.src = preview;
             photoImg.alt = s.frame.title;
+            photoLink.href = preview;
             photoBox.hidden = false;
         }
-
-        function tieColour(r) {
-            var stops = [[0, '#1a9850'], [4, '#91cf60'], [8, '#fee08b'], [15, '#fc8d59'], [30, '#d73027']];
-            for (var i = stops.length - 1; i >= 0; i--) if (r >= stops[i][0]) return stops[i][1];
-            return stops[0][1];
-        }
-
-        function drawPhotoTies() {
-            // One dot per point is a lot of SVG for 4,000 points; most
-            // frames have under 2,000, and the browser copes.
-            var ns = 'http://www.w3.org/2000/svg';
-            photoSvg.setAttribute('viewBox', '0 0 1000 1000');
-            photoSvg.setAttribute('preserveAspectRatio', 'none');
-            tiePoints.forEach(function (p) {
-                if (p.x === null) return;
-                var c = document.createElementNS(ns, 'circle');
-                c.setAttribute('cx', (p.x * 1000).toFixed(1));
-                c.setAttribute('cy', (p.y * 1000).toFixed(1));
-                c.setAttribute('r', p.k ? 3.2 : 2.4);
-                c.setAttribute('fill', p.k ? tieColour(p.r) : '#ffffff');
-                c.setAttribute('fill-opacity', p.k ? 0.9 : 0.45);
-                c.setAttribute('vector-effect', 'non-scaling-stroke');
-                photoSvg.appendChild(c);
-            });
-        }
-
-        // Lay the dots exactly over the image as drawn.
-        function placeSvg() {
-            var frame = photoImg.parentNode.getBoundingClientRect();
-            var img = photoImg.getBoundingClientRect();
-            photoSvg.style.left = (img.left - frame.left) + 'px';
-            photoSvg.style.top = (img.top - frame.top) + 'px';
-            photoSvg.style.width = img.width + 'px';
-            photoSvg.style.height = img.height + 'px';
-        }
-        window.addEventListener('resize', function () { if (!photoBox.hidden) placeSvg(); });
 
         function closePhoto() {
             photoBox.hidden = true;

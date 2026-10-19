@@ -5,17 +5,26 @@ A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for t
 Drag the year handle on the timeline, or press the play button, to travel through the years.
 The handle can rest on any year.
 The map then shows every mosaic flown that year where it has imagery, the sharpest on top, and where nothing was flown that year, the most recent earlier photograph shows through.
-An orange dot marks each year with imagery in view, so the dots change as the map moves; the line under the title says when the map is showing an earlier year than the handle.
-The present day is Esri World Imagery, always underneath.
+An orange dot marks each year with imagery in view, so the dots change as the map moves.
+A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
+The line under the title says when the map is showing an earlier year than the handle.
+The present day, at the top of the timeline, is Esri World Imagery.
+Under every other year the OpenStreetMap street map shows wherever there are no photographs.
+
+The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
 
 Click the map to see which photograph that spot came from and the day it was flown.
+"View photograph" opens GA's preview of it, with a link to download the full scan; clicking the preview opens it in a new tab.
 "About this layer" says what each mosaic on screen is, how it was placed, and what is known to be wrong with it.
+The credit line at the bottom names only what is on screen, with a link to each mosaic's catalog record.
+
+[docs/specification.md](docs/specification.md) is bilby's specification for the site; it can be ahead of or behind what is built.
 
 ## How it fits together
 
 - **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), which the page reads in the browser at `/stac/`.
   Every Web Mercator mosaic served from hapmap.app is a layer, filed under the year its flying started, so a newly published mosaic appears on the next page load, with no deploy.
-- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, and the present-day base layer.
+- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, the present-day layer, and the street map underneath.
   It is what differs between production and dev.
 - **The build**, `npm run build`, turns `layers.yaml` into `dist/site.json`, copies `index.html`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
 - **The Worker**, `worker/cog-proxy.js`, serves `dist/` and range-proxies everything else out of the R2 bucket: the COGs at `/cog/…` and the public catalog at `/stac/…`.

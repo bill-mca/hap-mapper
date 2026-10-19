@@ -1,5 +1,5 @@
-# What hapmap.app leaves out of the hap-mosaics STAC catalog, and the
-# present-day imagery it draws underneath.
+# What hapmap.app leaves out of the hap-mosaics STAC catalog, the present-day
+# imagery at the top of the timeline, and the street map underneath it all.
 #
 # The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
 # published at https://hapmap.app/stac/): every Web Mercator mosaic served from
@@ -24,7 +24,7 @@ exclude:
   - steel-b-blag-3857
   - steel-c-blag-3857
 
-# The present day, always drawn underneath; not in the catalog.
+# The present day, the newest year on the timeline; not in the catalog.
 base:
   year: 2025
   title: Esri World Imagery
@@ -33,3 +33,13 @@ base:
   tileSize: 256
   maxzoom: 19
   attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+
+# The street map under every year, showing wherever the year on screen has no
+# imagery. It is not on the timeline.
+backdrop:
+  title: OpenStreetMap
+  description: The present-day street map, drawn wherever the year chosen has no photographs.
+  tiles: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+  tileSize: 256
+  maxzoom: 19
+  attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
