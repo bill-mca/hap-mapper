@@ -1,0 +1,44 @@
+# What hapmap.app leaves out of the hap-mosaics STAC catalog, the present-day
+# imagery at the top of the timeline, and the street map underneath it all.
+#
+# The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
+# published at https://hapmap.app/stac/): every Web Mercator mosaic served from
+# hapmap.app is a layer, filed under the year its flying started, so a mosaic
+# appears on the site as soon as hap-mosaics' publish.py has run. `npm run
+# build` turns this file into /site.json, which the page reads first.
+#
+# This file is what differs between the production site (the `main` branch,
+# deployed to the `hapmap` Worker) and the dev site (the `dev` branch, deployed
+# to `hapmap-dev`).
+
+# Mosaics in the catalog that the site does not show, by item ID.
+exclude:
+  # Eight times sharper than the Blag Map 1980 mosaic but worse placed and
+  # seamier; as the sharpest 1980 mosaic it would sit on top across Canberra.
+  - canberra-1980-soc195-3857
+  # Benchmark sites with several runs of the same frames: run a is shown
+  # until bilby picks one.
+  - proof-b-blag-3857
+  - memory-b-blag-3857
+  - memory-c-blag-3857
+  - steel-b-blag-3857
+  - steel-c-blag-3857
+
+# The present day, the newest year on the timeline; not in the catalog.
+base:
+  year: 2025
+  title: Esri World Imagery
+  description: Present-day satellite and aerial imagery from Esri's World Imagery basemap.
+  tiles: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+  tileSize: 256
+  maxzoom: 19
+  attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+
+# The street map under every year, showing wherever the year on screen has no
+# imagery. It is not on the timeline.
+backdrop:
+  title: OpenStreetMap
+  tiles: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+  tileSize: 256
+  maxzoom: 19
+  attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"

@@ -2,7 +2,7 @@
 
 Written 7 October 2026.
 This document says how a catalog of the mosaics can drive hapmap.app, deploy it, serve GIS users, and let a visitor click any pixel to find the photograph it came from.
-None of it is built yet except the catalog itself.
+All of it was built on the evening of 7 October 2026; the section below, "As built", says where it departs from the plan.
 
 ## Where things stand
 
@@ -225,6 +225,26 @@ The 1968 mosaic adds its share to each line.
 5. **hap-mapper:** `layers.yaml`, a build step that turns it into the timeline, and the `dev` branch and Gitea remote.
 6. **hap-mapper:** the click popup and the tie-point view.
 7. **Public catalog:** `stac/` on R2, then STAC Browser at `/browse/`.
+
+## As built (7 October 2026)
+
+Every step above is done, and hapmap.app runs on it.
+Where the build departs from the plan, or found something the plan did not know:
+
+- **Frame records live at `hapmap.app/stac/ga-frames/<GFID>.json`**, not `/frames/`, so that they sit inside the catalog and STAC Browser reaches them without a Worker route of its own.
+- **Tie points are larger than guessed.** The matcher keeps about two thousand points a frame, so a frame's tie file is about 90 KB, not 5–10 KB, and the six mosaics' tie points come to 154 MB as GeoParquet.
+- **The 1980 `source_frame` was 8-bit.** That run predates Blag Map's 16-bit labels, so every frame past the 254th read as 255. Those pixels were given to the nearest camera nadir among frames 255–786, which is how Blag Map draws seams before refining them; near a seam between two late frames the popup may name the neighbour. A re-run of the mosaic would make it exact, and is in the backlog.
+- **The 1926 and 1945 frames were matched as restituted scans**, cropped to their fiducial marks, so their tie points cannot be laid on GA's preview. The popup says so and shows them on the map only. The preview-frame years (1944, 1968, 1974–75 and 1980) show them on the photograph too.
+- **GA pads frame numbers in three ways**: most films not at all, SOC278 to three digits, CAS898 to two. The probe tries every width on a film's shortest frame numbers.
+- **The `derived/` copy of the 1968 COG was the first, banded upload**, not the colour-balanced one R2 serves. `publish.py` refused to overwrite R2 with it; `derived/` now holds R2's copy.
+- **GA's catalogue now gives CAC81 its days** (3 and 4 November 1955); the 1955 collection's description still says the day is missing, and should be corrected.
+- **GA's previews load in an `<img>`** on hapmap.app: the CloudFront rule that blocks scripts accepts an ordinary browser.
+
+The code is in three places:
+
+- blag-map, branch `stac-b51-b52` (pull request 3 on Gitea): B51, B52, the GFID matcher, the backfill and the patch origins.
+- hap-mosaics (`claude-agent/hap-mosaics` on Gitea): `ingest_blag.py`, `build_stac.py` and `publish.py`.
+- hap-mapper: `layers.yaml`, `scripts/build.mjs`, `scripts/build-browser.sh` and the popup in `index.html`.
 
 ## Open decisions
 

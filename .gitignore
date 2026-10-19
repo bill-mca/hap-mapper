@@ -151,3 +151,6 @@ tiles/
 # local for perf testing, not part of the production build.
 dev/
 wrangler.dev.jsonc
+
+# The built site (npm run build) and its caches
+dist/
