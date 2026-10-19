@@ -62,7 +62,7 @@ Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 
 - [x] Drop the title card, its "Showing …" line and the "About this layer" panel; the subtitle lives in the page title instead.
 - [x] Draw the older years showing through at 40% opacity, so the newest year drawn reads as the main layer.
 - [ ] bilby: the favicon.
-- [ ] The spec's unobtrusive "Loading…" overlay, which neither branch has yet.
+- [x] The spec's unobtrusive loading cue: a small spinner in the middle of the map while tiles, the catalog, a search or a photograph are loading.
 
 ## Later
 

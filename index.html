@@ -311,6 +311,40 @@
             margin-top: 8px;
         }
 
+        /* ---- Spinner: centred on the map, shown only while data loads ---- */
+        #spinner {
+            position: absolute;
+            top: 50%;
+            left: calc((100% - var(--timeline-width)) / 2);
+            z-index: 30;
+            width: 34px;
+            height: 34px;
+            margin: -17px 0 0 -17px;
+            box-sizing: border-box;
+            border: 4px solid rgba(255, 255, 255, 0.55);
+            border-top-color: var(--hap-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            animation: spin 0.9s linear infinite;
+        }
+
+        #spinner[hidden] {
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #spinner {
+                animation-duration: 3s;
+            }
+        }
+
         /* ---- Attribution: only what is on screen ---- */
         #attribution {
             position: absolute;
@@ -351,6 +385,9 @@
 
     <!-- Search for a present-day place -->
     <div id="search"></div>
+
+    <!-- Spins while the map or the page is fetching data -->
+    <div id="spinner" role="status" aria-label="Loading" hidden></div>
 
     <!-- Credits for what is on screen -->
     <div id="attribution"></div>
@@ -396,11 +433,43 @@
         // ------------------------------------------------------------------
         var SITE_URL = 'https://hapmap.app';
 
+        // ------------------------------------------------------------------
+        // The spinner shows while the map is loading tiles or the page is
+        // fetching anything itself: the catalog, a search, the photograph
+        // behind a click. It waits a moment before showing, so a quick load
+        // does not make it flicker.
+        // ------------------------------------------------------------------
+        var spinner = document.getElementById('spinner');
+        var mapBusy = true; // until the map first goes idle
+        var pending = 0; // the page's own fetches in flight
+        var spinTimer = null;
+
+        function setBusy() {
+            if (mapBusy || pending > 0) {
+                if (spinner.hidden && spinTimer === null) {
+                    spinTimer = setTimeout(function () { spinner.hidden = false; }, 250);
+                }
+            } else {
+                clearTimeout(spinTimer);
+                spinTimer = null;
+                spinner.hidden = true;
+            }
+        }
+
+        function busyWhile(promise) {
+            pending++;
+            setBusy();
+            return promise.finally(function () {
+                pending--;
+                setBusy();
+            });
+        }
+
         function fetchJson(path) {
-            return fetch(path).then(function (r) {
+            return busyWhile(fetch(path).then(function (r) {
                 if (!r.ok) throw new Error(path + ': HTTP ' + r.status);
                 return r.json();
-            });
+            }));
         }
 
         // hapmap.app/cog/x.tif -> /cog/x.tif, so either Worker serves it.
@@ -596,6 +665,11 @@
                 ]
             }
         });
+
+        // Busy from the first tile asked for until every tile in view has
+        // arrived and every fade has finished.
+        canberraMap.on('dataloading', function () { mapBusy = true; setBusy(); });
+        canberraMap.on('idle', function () { mapBusy = false; setBusy(); });
 
         canberraMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
         canberraMap.addControl(new maplibregl.GeolocateControl({
@@ -1109,7 +1183,7 @@
                 .setHTML('<div class="frame-pop"><p class="muted">Looking…</p></div>').addTo(canberraMap);
             var mine = popup;
             try {
-                var html = layer.sourceFrame ? await framePopup(layer, e.lngLat) : layerPopup(layer);
+                var html = layer.sourceFrame ? await busyWhile(framePopup(layer, e.lngLat)) : layerPopup(layer);
                 if (mine === popup) popup.setHTML(html);
             } catch (err) {
                 console.error(err);
@@ -1180,6 +1254,7 @@
                     (record.properties['hap:scan_size'] ? ' (' + esc(record.properties['hap:scan_size']) + ').' : '.');
             }
             document.getElementById('photo-caption').innerHTML = caption;
+            busyWhile(new Promise(function (done) { photoImg.onload = photoImg.onerror = done; }));
             photoImg.src = preview;
             photoImg.alt = s.frame.title;
             photoLink.href = preview;

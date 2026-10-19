@@ -12,6 +12,7 @@ The present day, at the top of the timeline, is Esri World Imagery.
 Under every other year the OpenStreetMap street map shows wherever there are no photographs.
 
 There is no title card or layer panel: the map is the interface.
+A small spinner in the middle of the map turns while anything is loading.
 The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
 
 Click the map to see which photograph that spot came from and the day it was flown.
