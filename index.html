@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Hap-Map - Time travel over North Canberra</title>
+    <title>Hap-Map · Exploring Australia's historical aerial photography</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Exploring Australia's historical aerial photography">
@@ -39,58 +39,20 @@
             background: #0b1622;
         }
 
-        /* ---- Along the top: the title card, then the search box, which
-           drops below the title card when the two do not fit side by side ---- */
-        #top {
+        /* ---- Search, at the top centre of the map ---- */
+        #search {
             position: absolute;
             top: 10px;
             left: 54px;
             right: calc(var(--timeline-width) + 10px);
             z-index: 5;
             display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            gap: 8px;
+            justify-content: center;
             pointer-events: none;
-        }
-
-        #title-card {
-            background: var(--hap-navy);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 6px;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
-            pointer-events: none;
-        }
-
-        #title-card h1 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-
-        #title-card .titles {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-
-        #subtitle {
-            margin: 0;
-            font-size: 10px;
-            opacity: 0.85;
-            letter-spacing: 0.2px;
-        }
-
-        /* ---- Search, centred in the room the title card leaves ---- */
-        #search {
-            margin: 0 auto;
-            max-width: 100%;
-            pointer-events: auto;
         }
 
         #search .maplibregl-ctrl-geocoder {
+            pointer-events: auto;
             width: 240px;
             min-width: 0;
             max-width: 100%;
@@ -235,100 +197,6 @@
             background: #6e7c8e;
         }
 
-        /* ---- About this layer (opens from the title card) ---- */
-        #title-card {
-            pointer-events: auto;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 4px 10px;
-            box-sizing: border-box;
-            /* Wrapping when "Showing …" is long */
-            max-width: 100%;
-        }
-
-        #showing {
-            font-size: 12px;
-            color: #c9d6e6;
-        }
-
-        #info-btn {
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            background: transparent;
-            color: #fff;
-            border-radius: 4px;
-            font-size: 12px;
-            padding: 3px 8px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        #info-btn:hover,
-        #info-btn[aria-expanded="true"] {
-            background: var(--hap-navy-light);
-        }
-
-        #layer-info {
-            position: absolute;
-            top: 58px;
-            left: 54px;
-            z-index: 6;
-            width: min(340px, calc(100vw - var(--timeline-width) - 70px));
-            max-height: calc(100vh - 140px);
-            overflow-y: auto;
-            background: #fff;
-            color: #1d2733;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-            padding: 12px 14px;
-            font-size: 13px;
-            line-height: 1.45;
-        }
-
-        #layer-info[hidden] {
-            display: none;
-        }
-
-        #layer-info h2 {
-            margin: 0 0 2px;
-            font-size: 15px;
-            color: var(--hap-navy);
-        }
-
-        #layer-info h3 {
-            margin: 10px 0 2px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #54657c;
-        }
-
-        #layer-info p,
-        #layer-info ul {
-            margin: 4px 0;
-        }
-
-        #layer-info ul {
-            padding-left: 18px;
-        }
-
-        #layer-info hr {
-            border: none;
-            border-top: 1px solid #dde3ea;
-            margin: 12px 0;
-        }
-
-        #layer-info .muted {
-            color: #54657c;
-        }
-
-        #layer-info .hint {
-            margin-top: 10px;
-            padding: 6px 8px;
-            background: #fff6e5;
-            border-left: 3px solid var(--hap-accent);
-        }
-
         /* ---- Click popup: which photograph this spot came from ---- */
         .maplibregl-popup-content {
             font-size: 13px;
@@ -468,14 +336,6 @@
                 --timeline-width: 64px;
             }
 
-            #title-card h1 {
-                font-size: 13px;
-            }
-
-            #subtitle {
-                display: none;
-            }
-
             /* "1974–75" must fit the narrower timeline */
             #handle {
                 font-size: 12px;
@@ -489,21 +349,8 @@
     <!-- Map Container -->
     <div id="map"></div>
 
-    <!-- Along the top: the title card and the search box -->
-    <div id="top">
-        <div id="title-card">
-            <div class="titles">
-                <h1>Hap-Map</h1>
-                <p id="subtitle">Exploring Australia's historical aerial photography</p>
-            </div>
-            <span id="showing" hidden></span>
-            <button id="info-btn" type="button" aria-expanded="false" aria-controls="layer-info">About this layer</button>
-        </div>
-
-        <!-- Search for a present-day place -->
-        <div id="search"></div>
-    </div>
-    <section id="layer-info" hidden aria-live="polite"></section>
+    <!-- Search for a present-day place -->
+    <div id="search"></div>
 
     <!-- Credits for what is on screen -->
     <div id="attribution"></div>
@@ -625,18 +472,11 @@
                 year: Number(start.slice(0, 4)),
                 label: flightLabel(start, end),
                 title: p.title,
-                description: p.description,
-                start: start,
-                end: end,
-                films: p['hap:films'] || [],
-                framesUsed: p['hap:frames_used'],
                 gsd: p.gsd,
                 georef: {
                     status: p['hap:georef_status'],
-                    method: p['hap:georef_method'],
-                    notes: p['hap:georef_notes']
+                    method: p['hap:georef_method']
                 },
-                knownIssues: p['hap:known_issues'] || [],
                 cog: local(data.href),
                 gray: bands.indexOf('red') < 0,
                 href: local(self),
@@ -921,13 +761,13 @@
             });
         }
 
-        // Fade a layer in, or fade it out and then hide it, so it fetches
-        // nothing more.
-        function fade(layer, on) {
+        // Fade a layer to an opacity, or fade it out and then hide it, so it
+        // fetches nothing more.
+        function fade(layer, opacity) {
             clearTimeout(layer.hideTimer);
-            if (on) {
+            if (opacity > 0) {
                 canberraMap.setLayoutProperty(layer.layerId, 'visibility', 'visible');
-                canberraMap.setPaintProperty(layer.layerId, 'raster-opacity', 1);
+                canberraMap.setPaintProperty(layer.layerId, 'raster-opacity', opacity);
             } else {
                 canberraMap.setPaintProperty(layer.layerId, 'raster-opacity', 0);
                 layer.hideTimer = setTimeout(function () {
@@ -937,8 +777,13 @@
         }
 
         // Layers joining the stack fade in, in stack order; layers leaving it
-        // fade out. The present day shows only when it is the year chosen;
-        // under any other year the street map shows through instead.
+        // fade out. The newest year drawn, the top of the stack, is solid;
+        // the older years showing through beneath it are faint, so they read
+        // as stand-ins rather than the year on the map. The present day
+        // shows only when it is the year chosen; under any other year the
+        // street map shows through instead.
+        var UNDER_OPACITY = 0.4;
+
         function drawStack() {
             var next = stackFor(activeYear);
             var leaving = stack.filter(function (m) { return next.indexOf(m) < 0; });
@@ -946,12 +791,10 @@
             next.slice().reverse().forEach(function (m) {
                 ensureLayer(m);
                 canberraMap.moveLayer(m.layerId);
-                fade(m, true);
+                fade(m, m.year === next[0].year ? 1 : UNDER_OPACITY);
             });
-            leaving.forEach(function (m) { fade(m, false); });
-            fade(BASE, activeYear >= BASE.year);
-            renderShowing();
-            renderLayerInfo();
+            leaving.forEach(function (m) { fade(m, 0); });
+            fade(BASE, activeYear >= BASE.year ? 1 : 0);
             renderCoarse();
             renderAttribution();
         }
@@ -963,31 +806,6 @@
             stack: function () { return stack.map(function (m) { return m.id; }); },
             mosaics: function () { return MOSAICS; }
         };
-
-        function joinAnd(list) {
-            return list.length < 2 ? list.join('') : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1];
-        }
-
-        // Under the title: what is on screen, when it is not just the year
-        // the handle names.
-        var showingEl = document.getElementById('showing');
-
-        function renderShowing() {
-            var years = [];
-            stack.forEach(function (m) {
-                if (years.indexOf(m.label) < 0) years.push(m.label);
-            });
-            var text = '';
-            if (activeYear < BASE.year && !years.length) {
-                text = 'No photographs here from ' + activeYear + ' or before';
-            } else if (years.length > 3) {
-                text = 'Showing ' + years[0] + ', ' + years[1] + ' and ' + (years.length - 2) + ' earlier years';
-            } else if (years.length > 1 || (years.length && stack[0].year !== activeYear)) {
-                text = 'Showing ' + joinAnd(years);
-            }
-            showingEl.textContent = text;
-            showingEl.hidden = !text;
-        }
 
         // Ground metres across one screen pixel at the centre of the map.
         // MapLibre's world is 512 pixels wide at zoom 0.
@@ -1207,22 +1025,6 @@
             }, 2500);
         });
 
-        // ------------------------------------------------------------------
-        // About this layer: what each mosaic on screen is, when it was
-        // flown, how it was placed
-        // ------------------------------------------------------------------
-        var infoBtn = document.getElementById('info-btn');
-        var infoPanel = document.getElementById('layer-info');
-
-        infoBtn.addEventListener('click', function () {
-            var open = infoPanel.hidden;
-            // Below the title card and the search box, wherever it has wrapped to
-            infoPanel.style.top = (document.getElementById('top').getBoundingClientRect().bottom + 6) + 'px';
-            infoPanel.hidden = !open;
-            infoBtn.setAttribute('aria-expanded', String(open));
-            renderLayerInfo();
-        });
-
         function esc(s) {
             return String(s).replace(/[&<>"']/g, function (c) {
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1240,60 +1042,12 @@
             return Number(p[2]) + ' ' + MONTHS[Number(p[1]) - 1] + ' ' + p[0];
         }
 
-        function flown(layer) {
-            var a = layer.start.slice(0, 10), b = layer.end.slice(0, 10);
-            if (a.slice(5) === '01-01' && b.slice(5) === '12-31' && a.slice(0, 4) === b.slice(0, 4)) {
-                return 'in ' + a.slice(0, 4) + ' (day not recorded)';
-            }
-            return a === b ? 'on ' + niceDate(a) : 'between ' + niceDate(a) + ' and ' + niceDate(b);
-        }
-
         var GEOREF = {
             automated: 'Placed automatically.',
             manual: 'Placed by hand.',
             unverified: 'Placement not checked.',
             wrong: 'Known to be out of place.'
         };
-
-        function renderLayerInfo() {
-            if (infoPanel.hidden) return;
-            if (!stack.length && activeYear < BASE.year) {
-                infoPanel.innerHTML = '<h2>' + esc(BACKDROP.title) + '</h2><p>' + esc(BACKDROP.description) + '</p>' +
-                    '<p class="hint">There are no photographs of this view from ' + esc(activeYear) +
-                    ' or before. Move the timeline forward, or the map elsewhere.</p>';
-                return;
-            }
-            if (!stack.length) {
-                infoPanel.innerHTML = '<h2>' + esc(BASE.label) + ': ' + esc(BASE.title) + '</h2><p>' + esc(BASE.description) + '</p>' +
-                    '<p class="hint">Move the timeline back to see Canberra from the air in earlier years.</p>';
-                return;
-            }
-            var html = stack.map(mosaicInfo).join('<hr>');
-            if (stack.some(function (l) { return l.sourceFrame; })) {
-                html += '<p class="hint">Click anywhere on the map to see which photograph that spot came from and when it was taken.</p>';
-            }
-            infoPanel.innerHTML = html + '<p class="muted">Photography &copy; Geoscience Australia, CC BY 4.0. ' +
-                '<a href="/browse/" target="_blank" rel="noopener">Browse the catalog</a></p>';
-        }
-
-        function mosaicInfo(l) {
-            var films = l.films.join(', ').replace(/, ([^,]*)$/, ' and $1');
-            var frames = l.framesUsed || (l.sourceFrame && l.sourceFrame.classes && l.sourceFrame.classes.length);
-            var html = '<h2>' + esc(l.label) + '</h2>' +
-                '<p>' + esc(l.title) + '.</p>' +
-                '<p>Photographed ' + esc(flown(l)) + ' on film' + (l.films.length > 1 ? 's ' : ' ') + esc(films) +
-                (frames ? ', ' + frames + ' photographs in all' : '') + '.' +
-                (l.gsd ? ' Each pixel is about ' + esc(l.gsd < 1 ? l.gsd.toFixed(2) : l.gsd.toFixed(1)) + ' m across.' : '') + '</p>' +
-                '<h3>How it was placed</h3><p>' + esc(GEOREF[l.georef.status] || '') + ' ' + esc(l.georef.method || '') + '</p>' +
-                (l.georef.notes ? '<p>' + esc(l.georef.notes) + '</p>' : '');
-            if (l.knownIssues.length) {
-                html += '<h3>Known faults</h3><ul>' + l.knownIssues.map(function (k) {
-                    return '<li>' + esc(k) + '</li>';
-                }).join('') + '</ul>';
-            }
-            return html + '<h3>Data</h3><p><a href="' + esc(l.record) + '" target="_blank" rel="noopener">Catalog record</a> · ' +
-                '<a href="' + esc(l.cog) + '" title="A Cloud-Optimized GeoTIFF: open it in QGIS or GDAL with /vsicurl/">GeoTIFF</a></p>';
-        }
 
         // ------------------------------------------------------------------
         // Click a spot: which photograph made it. Blag Map records the

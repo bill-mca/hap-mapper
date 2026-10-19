@@ -59,6 +59,8 @@ Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 
 - [x] OpenStreetMap under every year; the present day only in 2025.
 - [x] A credit line for only what is on screen, linking each mosaic's catalog record.
 - [x] Grey dots for years zoomed in past their sharpest mosaic in view, and a grey handle when everything drawn is.
+- [x] Drop the title card, its "Showing …" line and the "About this layer" panel; the subtitle lives in the page title instead.
+- [x] Draw the older years showing through at 40% opacity, so the newest year drawn reads as the main layer.
 - [ ] bilby: the favicon.
 - [ ] The spec's unobtrusive "Loading…" overlay, which neither branch has yet.
 

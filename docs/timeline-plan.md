@@ -23,6 +23,7 @@ For the chosen year Y, the page takes every mosaic in view that started in Y or 
 Wherever a year-Y mosaic has imagery, it is what the visitor sees.
 Where it has none, the most recent earlier mosaic shows through, and below everything, the OpenStreetMap street map.
 The present day shows only when it is the year chosen.
+The newest year drawn is solid, and every older year showing through it is drawn at 40% opacity (bilby, 19 October 2026).
 Rule 3 then holds place by place, not just for the whole screen: at the opening view over Lake Burley Griffin in 1990, the 1990 mosaic covers two-thirds of the screen and 1985 fills the rest.
 
 The stack is pruned from the top down, so the page loads little more raster than the visitor sees.

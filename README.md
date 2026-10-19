@@ -5,17 +5,17 @@ A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for t
 Drag the year handle on the timeline, or press the play button, to travel through the years.
 The handle can rest on any year.
 The map then shows every mosaic flown that year where it has imagery, the sharpest on top, and where nothing was flown that year, the most recent earlier photograph shows through.
+Those older years are drawn faint, at 40% opacity, so the newest year on screen stands out as the one being shown.
 An orange dot marks each year with imagery in view, so the dots change as the map moves.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
-The line under the title says when the map is showing an earlier year than the handle.
 The present day, at the top of the timeline, is Esri World Imagery.
 Under every other year the OpenStreetMap street map shows wherever there are no photographs.
 
+There is no title card or layer panel: the map is the interface.
 The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
 
 Click the map to see which photograph that spot came from and the day it was flown.
 "View photograph" opens GA's preview of it, with a link to download the full scan; clicking the preview opens it in a new tab.
-"About this layer" says what each mosaic on screen is, how it was placed, and what is known to be wrong with it.
 The credit line at the bottom names only what is on screen, with a link to each mosaic's catalog record.
 
 [docs/specification.md](docs/specification.md) is bilby's specification for the site; it can be ahead of or behind what is built.

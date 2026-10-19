@@ -38,7 +38,6 @@ base:
 # imagery. It is not on the timeline.
 backdrop:
   title: OpenStreetMap
-  description: The present-day street map, drawn wherever the year chosen has no photographs.
   tiles: https://tile.openstreetmap.org/{z}/{x}/{y}.png
   tileSize: 256
   maxzoom: 19
