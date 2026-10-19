@@ -117,3 +117,27 @@ The page still reads nothing but STAC: an ItemCollection is a standard STAC docu
 4. hap-mapper: click and attribution from the drawn stack.
 5. hap-mapper: retire `layers.yaml` and slim `scripts/build.mjs`.
 6. Try it on `hapmap-dev` at Civic, Tharwa, Cooma and Yass, and on a phone.
+
+## As built on hapmap-dev (19 October 2026)
+
+The page now reads the catalog and draws the year stacks described above; `hapmap-dev` runs it.
+Where the build departs from the plan, or found something the plan did not know:
+
+- **The page walks the catalog**, because `web-items.json` does not exist yet.
+  It fetches only items whose links contain `-3857`, the pipeline's name for a Web Mercator item, so the native-grid half of the catalog is never downloaded.
+  That is 57 requests and about 2.4 seconds on hectar before the timeline appears; the map and the present day show at once.
+  When `publish.py` links an ItemCollection from `catalog.json` with `rel: "items"`, the page reads that one file instead, with no change here.
+- **The newest year in view keeps every mosaic.**
+  The 2% rule applies only to the older years beneath it, so that a year with a dot always shows what the dot promises: at the opening view, 1962 shows the sliver of ACT 1962–63, with 1959 and 1955 beneath.
+- **What is left out stays in `layers.yaml`**, as `exclude`, built into `/site.json`, because the hap-mosaics repository is not changed from here.
+  SOC195 and runs b and c of Proof, Memory and Steel are left out; run a of each is shown until bilby picks.
+- **Sharpest on top means the benchmark runs often win.**
+  Proof (4 m) covers everything ACT 1944 (5 m) does around Canberra, so the current 1944 layer is never drawn there, and Intent (2 m) sits on top of ACT 1985 (2.5 m).
+  If the current mosaics should win among equals, the sort needs `hap:status` before pixel size.
+- **A footprint without its holes overstates coverage.**
+  MAP658 has a block of frames that were never scanned, and Proof's footprint does not cut it out, so the page counts that block as covered and does not draw 1926 under it; there the present day shows through.
+- **No tile culling yet.**
+  The protocol names tiles `cog://<url>/{z}/{x}/{y}` and its TileJSON already carries each COG's bounds, so a wrapper could refuse tiles that the layers above cover.
+  MapLibre keeps a refused tile in its cache when the stack later changes, though, so it needs a way to reload a source before it is worth doing.
+
+Checked in headless Chromium against `hapmap-dev` at the opening view, Civic at street level, Tharwa, Cooma, Yass and the whole region, for 1930, 1944, 1962, 1987, 1990 and 2010; with the arrow keys, a drag, a click on a 1985 frame, the info panel, and at phone width.

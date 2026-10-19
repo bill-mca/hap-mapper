@@ -2,23 +2,29 @@
 
 A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for the Hap-Map project, showing historical aerial photography of Canberra at [hapmap.app](https://hapmap.app).
 
-Drag the year handle on the timeline, or press the play button, to crossfade between imagery years.
-Years with imagery are marked with orange dots: 1926, 1944, 1945, 1955, 1968, 1974–75, 1980 and 2025 (Esri World Imagery).
-1955 is the complete CAC80-81-88 campaign, restituted with MicMac and placed by hand; the others are Blag Map mosaics of Geoscience Australia's historical aerial photography.
+Drag the year handle on the timeline, or press the play button, to travel through the years.
+The handle can rest on any year.
+The map then shows every mosaic flown that year where it has imagery, the sharpest on top, and where nothing was flown that year, the most recent earlier photograph shows through.
+An orange dot marks each year with imagery in view, so the dots change as the map moves; the line under the title says when the map is showing an earlier year than the handle.
+The present day is Esri World Imagery, always underneath.
 
-Click the map on a Blag Map year to see which photograph that spot came from, the day it was flown, and how it was put in place.
-From there you can show its tie points on the map, or on the photograph itself.
-"About this layer" says what the current year is, how it was placed, and what is known to be wrong with it.
+Click the map to see which photograph that spot came from and the day it was flown.
+"About this layer" says what each mosaic on screen is, how it was placed, and what is known to be wrong with it.
 
 ## How it fits together
 
-- **The layers** are listed by catalog ID in [`layers.yaml`](layers.yaml).
-  Everything else about them comes from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar): the R2 key, grey or colour, the flight dates that give the timeline year and label, and which photograph made each pixel.
-- **The build**, `npm run build`, joins the two into `dist/layers.json`, copies `index.html`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
-  It reads the catalog from `~/hap-mosaics/web/stac` when that is there, and from `https://hapmap.app/stac` otherwise.
+- **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), which the page reads in the browser at `/stac/`.
+  Every Web Mercator mosaic served from hapmap.app is a layer, filed under the year its flying started, so a newly published mosaic appears on the next page load, with no deploy.
+- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, and the present-day base layer.
+  It is what differs between production and dev.
+- **The build**, `npm run build`, turns `layers.yaml` into `dist/site.json`, copies `index.html`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
 - **The Worker**, `worker/cog-proxy.js`, serves `dist/` and range-proxies everything else out of the R2 bucket: the COGs at `/cog/…` and the public catalog at `/stac/…`.
 - **The bucket** is kept by hap-mosaics' `publish.py`, which uploads what is missing, writes the public catalog, and never overwrites or deletes.
   [docs/r2-inventory.md](docs/r2-inventory.md) is the register of what is in it.
+
+For each year and view the page draws as few mosaics as it can: newest year first and the sharpest first within a year, skipping older mosaics that would add less than 2% of the view, and stopping once the view is covered.
+[docs/timeline-plan.md](docs/timeline-plan.md) has the design and the numbers.
+From the browser console, `hapmap.stack()` lists what is drawn.
 
 The historical layers are Cloud-Optimized GeoTIFFs in EPSG:3857, because [`@geomatico/maplibre-cog-protocol`](https://github.com/geomatico/maplibre-cog-protocol) draws nothing else.
 The map is [MapLibre GL JS](https://maplibre.org/), whose WebGL renderer gives smooth raster-opacity crossfades.
@@ -40,4 +46,4 @@ Each Blag Map mosaic is published twice: in Web Mercator for the map, and on its
 - Promotion is a pull request from `dev` into `main` on Gitea (`claude-agent/hap-mapper`).
 
 To add an imagery year, describe the mosaic in hap-mosaics' `mosaics.yaml` with `publish: true`, and run its `build_stac.py` and `publish.py`.
-Then add the item ID to `layers.yaml` on `dev`, deploy, look, and open the pull request.
+It appears on both sites at once; to keep it off production while it is checked on dev, add its item ID to `exclude` in `layers.yaml` on `main`.

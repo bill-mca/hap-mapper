@@ -1,32 +1,28 @@
-# The imagery hapmap.app shows, oldest first.
+# What hapmap.app leaves out of the hap-mosaics STAC catalog, and the
+# present-day imagery it draws underneath.
 #
-# Each layer is a STAC item in the hap-mosaics catalog (claude-agent/hap-mosaics
-# on Gitea), named by its ID. Everything else about it comes from the catalog:
-# its R2 key, whether it is grey or colour, its flight dates, which give the
-# timeline year and label (1974–75 is worked out, not written down), and, for
-# a Blag Map mosaic, which photograph made each pixel.
+# The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
+# published at https://hapmap.app/stac/): every Web Mercator mosaic served from
+# hapmap.app is a layer, filed under the year its flying started, so a mosaic
+# appears on the site as soon as hap-mosaics' publish.py has run. `npm run
+# build` turns this file into /site.json, which the page reads first.
 #
 # This file is what differs between the production site (the `main` branch,
 # deployed to the `hapmap` Worker) and the dev site (the `dev` branch, deployed
-# to `hapmap-dev`). Facts about a mosaic never differ, so they stay in the
-# catalog. An item must be published to R2 (hap-mosaics' publish.py) before a
-# branch can show it.
-#
-# A layer may be written as just its ID, or as {item: ID, label: "..."} to
-# override the label worked out from its dates.
+# to `hapmap-dev`).
 
-layers:
-  - canberra-1926-map3584-blag-3857
-  - act-1944-map658-753-blag-3857
-  - canberra-1945-map1537-blag-3857
-  - north-canberra-1955-cac80-3857
-  - act-1962-63-cac161-173-blag-3857-v3
-  - act-1968-cacc4-c15-blag-3857
-  - act-1974-75-cas896-920-blag-3857
-  - canberra-1980-soc276-279-blag-3857
-  - act-1985-soc665-674-blag-3857-v2
-  - act-1990-ausc228-237-blag-3857-v2
-  - act-1992-ausc317-324-blag-3857
+# Mosaics in the catalog that the site does not show, by item ID.
+exclude:
+  # Eight times sharper than the Blag Map 1980 mosaic but worse placed and
+  # seamier; as the sharpest 1980 mosaic it would sit on top across Canberra.
+  - canberra-1980-soc195-3857
+  # Benchmark sites with several runs of the same frames: run a is shown
+  # until bilby picks one.
+  - proof-b-blag-3857
+  - memory-b-blag-3857
+  - memory-c-blag-3857
+  - steel-b-blag-3857
+  - steel-c-blag-3857
 
 # The present day, always drawn underneath; not in the catalog.
 base:

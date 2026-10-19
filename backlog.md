@@ -38,10 +38,14 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 
 - [ ] hap-mosaics: `publish.py` writes `stac/web-items.json`, a slim ItemCollection of the Web Mercator items, linked from `catalog.json`.
 - [ ] hap-mosaics: mark the benchmark runs and mosaics (SOC195) to keep off the site.
-- [ ] Page: load `web-items.json`; for the chosen year, stack every mosaic in view from that year or before, newest year then finest on top; stop once the view is covered, and skip mosaics that add less than 2% of it.
-- [ ] Page: one dot per year with imagery in view; free slider; keys and play over the lit years.
-- [ ] Page: click and attribution taken from the drawn stack.
-- [ ] Retire `layers.yaml` and slim `scripts/build.mjs`.
+- [x] Page: load the catalog; for the chosen year, stack every mosaic in view from that year or before, newest year then finest on top; stop once the view is covered, and skip mosaics that add less than 2% of it.
+- [x] Page: one dot per year with imagery in view; free slider; keys and play over the lit years.
+- [x] Page: click and "About this layer" taken from the drawn stack.
+- [x] Slim `layers.yaml` to `exclude` and the base layer, and `scripts/build.mjs` to `/site.json`; deployed to `hapmap-dev` (19 October 2026).
+- [ ] bilby: pick the Proof, Memory and Steel runs, and say whether current mosaics should beat benchmark runs of similar sharpness.
+- [ ] Cut unscanned holes out of the footprints in hap-mosaics, so older years show through them.
+- [ ] Cull tiles hidden under the layers above, once a culled tile can be reloaded when the stack changes.
+- [ ] Promote to production: a pull request from `dev` into `main`.
 
 ## Later
 
