@@ -1,0 +1,15 @@
+{
+  "name": "hap-mapper",
+  "private": true,
+  "type": "module",
+  "description": "hapmap.app: a time-travel map of Canberra's historical aerial photography",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "deploy": "node scripts/build.mjs && wrangler deploy",
+    "deploy:dev": "node scripts/build.mjs && wrangler deploy --env dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.68.1",
+    "yaml": "^2.8.1"
+  }
+}
