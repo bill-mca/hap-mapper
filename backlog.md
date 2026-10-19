@@ -45,7 +45,7 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 - [ ] bilby: pick the Proof, Memory and Steel runs, and say whether current mosaics should beat benchmark runs of similar sharpness.
 - [ ] Cut unscanned holes out of the footprints in hap-mosaics, so older years show through them.
 - [ ] Cull tiles hidden under the layers above, once a culled tile can be reloaded when the stack changes.
-- [ ] Promote to production: a pull request from `dev` into `main`.
+- [ ] Promote to production: a pull request from `dev` into `main` (Gitea PR #2, opened 19 October 2026), then `npm run deploy`.
 
 ## The spec-candidate features, on dev
 
