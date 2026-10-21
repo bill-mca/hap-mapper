@@ -141,7 +141,7 @@ Server timings came from `curl -w` against `hapmap-dev.u5007063.workers.dev`, bl
 
 ## As built (21 October 2026)
 
-The same day, every remedy above was built and deployed to `hapmap-dev` (version 952debd5), except Vite's trimming of geotiff.js's codecs, which it splits out and loads only when a COG needs them.
+The same day, every remedy above was built and deployed to `hapmap-dev` (version 952debd5).
 
 - **`src/cog.js`** replaces maplibre-cog-protocol.
   Each range is read from its own URL (`/cog/x.tif?r=<start>-<end>`, with the matching `Range` header), so Chrome never queues them, and each stays cacheable.
