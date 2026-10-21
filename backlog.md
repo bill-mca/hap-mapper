@@ -64,6 +64,19 @@ Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 
 - [ ] bilby: the favicon.
 - [x] The spec's unobtrusive loading cue: a small spinner in the middle of the map while tiles, the catalog, a search or a photograph are loading.
 
+## Imagery that loads quickly
+
+The diagnosis is in [docs/loading-performance.md](docs/loading-performance.md) (21 October 2026).
+
+- [x] Measure where the time goes when the year changes or the map moves.
+- [ ] Send COG range reads with `cache: 'no-store'`, so Chrome stops queueing them one at a time.
+- [ ] Vendor the COG protocol: a block cache, a 64 kB first read, honest 256 px tiles, and abort support.
+- [ ] Read every mosaic's header in the background once the page has loaded.
+- [ ] Create the map before awaiting anything; fetch `/site.json` and the catalog alongside the scripts.
+- [ ] Worker: cache ranges in the Cache API, and mark COG responses immutable.
+- [ ] hap-mosaics: try JPEG or WebP blocks on the `GoogleMapsCompatible` grid for one mosaic, and compare on `hapmap-dev`.
+- [ ] Build the page with Vite and serve its scripts from the Worker.
+
 ## Later
 
 - [ ] A Blag Map run of the 1955 CAC campaign against the 2004 and 2012 reference, to test the hand-corrected 1955 layer and perhaps replace it.
