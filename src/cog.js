@@ -334,7 +334,6 @@ class Cog {
         // Source column and row for each output column and row (nearest).
         const cols = new Int32Array(OUT);
         const rows = new Int32Array(OUT);
-        let any = false;
         for (let i = 0; i < OUT; i++) {
             const c = Math.floor((minX + (i + 0.5) * tileRes - ox) / level.res);
             cols[i] = c >= 0 && c < level.width ? c : -1;
@@ -345,18 +344,31 @@ class Cog {
         const bys = new Set();
         cols.forEach((c) => { if (c >= 0) bxs.add(Math.floor(c / level.tw)); });
         rows.forEach((r) => { if (r >= 0) bys.add(Math.floor(r / level.th)); });
-        any = bxs.size > 0 && bys.size > 0;
         const rgba = new Uint8ClampedArray(OUT * OUT * 4);
-        if (!any) return createImageBitmap(new ImageData(rgba, OUT, OUT));
+        if (!bxs.size || !bys.size) return createImageBitmap(new ImageData(rgba, OUT, OUT));
 
         const wanted = [];
         for (const by of bys) for (const bx of bxs) wanted.push([bx, by]);
         const got = await Promise.all(wanted.map(([bx, by]) => acquire(this.block(li, bx, by), signal)));
-        const grid = new Map();
-        wanted.forEach(([bx, by], k) => grid.set(by * level.nx + bx, got[k]));
 
+        // The tile touches a small grid of blocks, bx0.. across and by0.. down.
+        // For each output column, which block column and which pixel in it.
         const tw = level.tw;
         const th = level.th;
+        const bx0 = Math.min(...bxs);
+        const by0 = Math.min(...bys);
+        const across = Math.max(...bxs) - bx0 + 1;
+        const grid = new Array(across * (Math.max(...bys) - by0 + 1)).fill(null);
+        wanted.forEach(([bx, by], k) => { grid[(by - by0) * across + (bx - bx0)] = got[k]; });
+        const colBlock = new Int32Array(OUT);
+        const colPixel = new Int32Array(OUT);
+        for (let i = 0; i < OUT; i++) {
+            const c = cols[i];
+            colBlock[i] = c < 0 ? -1 : Math.floor(c / tw) - bx0;
+            colPixel[i] = c < 0 ? 0 : c % tw;
+        }
+
+        const out32 = new Uint32Array(rgba.buffer);
         const spp = level.spp;
         const nodata = this.nodata;
         const hasNodata = nodata !== null && nodata !== undefined && !Number.isNaN(nodata);
@@ -365,24 +377,26 @@ class Cog {
             const r = rows[j];
             if (r < 0) continue;
             const by = Math.floor(r / th);
-            const ry = r - by * th;
+            const rowStart = (r - by * th) * tw;
+            const rowBlocks = (by - by0) * across;
+            const o0 = j * OUT;
             for (let i = 0; i < OUT; i++) {
-                const c = cols[i];
-                if (c < 0) continue;
-                const bx = Math.floor(c / tw);
-                const b = grid.get(by * level.nx + bx);
-                if (!b || b.empty) continue;
-                const p = ry * tw + (c - bx * tw);
-                if (b.mask && b.mask[p] === 0) continue;
-                const o = (j * OUT + i) * 4;
+                const cb = colBlock[i];
+                if (cb < 0) continue;
+                const b = grid[rowBlocks + cb];
+                if (b === null || b.empty) continue;
+                const p = rowStart + colPixel[i];
                 const d = b.data;
                 if (b.rgba) {
-                    const q = p * 4;
-                    rgba[o] = d[q];
-                    rgba[o + 1] = d[q + 1];
-                    rgba[o + 2] = d[q + 2];
-                    rgba[o + 3] = d[q + 3];
-                } else if (gray) {
+                    // RGBA from the browser's decoder: one 32-bit copy a pixel.
+                    if (b.mask && b.mask[p] === 0) continue;
+                    const u = b.u32 || (b.u32 = new Uint32Array(d.buffer, d.byteOffset, d.length >> 2));
+                    out32[o0 + i] = u[p];
+                    continue;
+                }
+                if (b.mask && b.mask[p] === 0) continue;
+                const o = (o0 + i) * 4;
+                if (gray) {
                     const v = d[p * spp];
                     if (hasNodata && v === nodata) continue;
                     rgba[o] = rgba[o + 1] = rgba[o + 2] = v;

@@ -329,7 +329,8 @@ canberraMap.on('load', async function () {
 });
 
 // While the map moves, the stack follows it a few times a second, so
-// a layer newly in view starts loading before the map stops.
+// a layer newly in view starts loading before the map stops. The map is
+// left alone while the stack stays the same.
 var moveTimer = null;
 
 function onMove() {
@@ -337,7 +338,8 @@ function onMove() {
     moveTimer = setTimeout(function () {
         moveTimer = null;
         sampleView();
-        drawStack();
+        var next = stackFor(activeYear);
+        if (next.length !== stack.length || next.some(function (m, i) { return m !== stack[i]; })) drawStack();
     }, 250);
 }
 
