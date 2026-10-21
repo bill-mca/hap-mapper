@@ -23,12 +23,19 @@ The credit line at the bottom names only what is on screen, with a link to each 
 
 ## How it fits together
 
-- **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), which the page reads in the browser at `/stac/`.
+- **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), published at `/stac/`.
+  The page reads it in one request, from the Worker's `/web-items.json`, and walks `/stac/` itself only if that fails.
   Every Web Mercator mosaic served from hapmap.app is a layer, filed under the year its flying started, so a newly published mosaic appears on the next page load, with no deploy.
 - **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, the present-day layer, and the street map underneath.
   It is what differs between production and dev.
-- **The build**, `npm run build`, turns `layers.yaml` into `dist/site.json`, copies `index.html`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
-- **The Worker**, `worker/cog-proxy.js`, serves `dist/` and range-proxies everything else out of the R2 bucket: the COGs at `/cog/…` and the public catalog at `/stac/…`.
+- **The page** is `index.html` and `src/`: `src/main.js` is the map and the timeline, and `src/cog.js` draws the COGs.
+- **The build**, `npm run build`, bundles the page with [Vite](https://vite.dev/) into `dist/`, turns `layers.yaml` into `dist/site.json`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
+  `npx vite` serves the page locally, passing the catalog and the COGs through to the dev site.
+- **The Worker**, `worker/cog-proxy.js`, serves `dist/` and range-proxies everything else out of the R2 bucket: the COGs at `/cog/…`, their web copies at `/web/…`, and the public catalog at `/stac/…`.
+  It keeps the ranges it reads, in memory and in Cloudflare's edge cache, and makes `/web-items.json`, every Web Mercator item in the catalog in one file.
+- **The web copies** are what the map draws: each mosaic's pixels on the same grid, re-encoded as RGBA WebP, a tenth the size of a colour master and half a grey one.
+  `scripts/web-cogs.py` makes them from the masters in `~/hap-mosaics/derived/` and uploads them to `web/` in the bucket; the Worker finds them there.
+  A mosaic without one is drawn from its published COG.
 - **The bucket** is kept by hap-mosaics' `publish.py`, which uploads what is missing, writes the public catalog, and never overwrites or deletes.
   [docs/r2-inventory.md](docs/r2-inventory.md) is the register of what is in it.
 
@@ -36,7 +43,8 @@ For each year and view the page draws as few mosaics as it can: newest year firs
 [docs/timeline-plan.md](docs/timeline-plan.md) has the design and the numbers.
 From the browser console, `hapmap.stack()` lists what is drawn.
 
-The historical layers are Cloud-Optimized GeoTIFFs in EPSG:3857, because [`@geomatico/maplibre-cog-protocol`](https://github.com/geomatico/maplibre-cog-protocol) draws nothing else.
+The historical layers are Cloud-Optimized GeoTIFFs in EPSG:3857, which is all `src/cog.js` draws.
+It reads each COG block once, from its own URL so the browser fetches them side by side, decodes it in a worker, and keeps it for every map tile that needs it; [docs/loading-performance.md](docs/loading-performance.md) says why.
 The map is [MapLibre GL JS](https://maplibre.org/), whose WebGL renderer gives smooth raster-opacity crossfades.
 
 ## For GIS users

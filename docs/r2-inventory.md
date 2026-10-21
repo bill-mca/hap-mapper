@@ -46,6 +46,16 @@ Sizes are in decimal gigabytes.
 Every object is an EPSG:3857 COG with 512 px blocks, DEFLATE compression and internal overviews.
 Edges are transparent through NoData=0 in the grey files and through an alpha band in the colour ones.
 
+### Web copies of the map's mosaics (21 October 2026)
+
+`web/<name>.tif` holds a web copy of each Web Mercator COG the map shows, under the same file name as `cog/<name>.tif`: the same pixels on the same grid, re-encoded as RGBA WebP at quality 85, with 512 px blocks and the master's overviews.
+A grey master becomes grey RGB, its NoData the alpha band.
+They are not in the STAC catalog and `publish.py` did not put them there, so its orphan report lists them; they are derived from the masters, which stay the lossless record at `/cog/` for GIS use.
+The Worker marks a catalog item with a `web` asset when its copy is here, and the map draws that instead.
+`scripts/web-cogs.py` in this repository makes and uploads them; a changed master should get a web copy under a new name, since browsers keep ranges of a key for a day.
+
+33 objects, 7.6 GB: the colour mosaics shrink eight- to ninefold (1968: 1.14 GB to 0.12 GB), the grey ones about twofold (1955: 14.36 GB to 6.00 GB).
+
 ### Added for the STAC catalog and the click popup (7 October 2026)
 
 `publish.py` added 24 objects, 2.40 GB, for the six Blag Map mosaics:

@@ -70,13 +70,16 @@ Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 
 The diagnosis is in [docs/loading-performance.md](docs/loading-performance.md) (21 October 2026).
 
 - [x] Measure where the time goes when the year changes or the map moves.
-- [ ] Send COG range reads with `cache: 'no-store'`, so Chrome stops queueing them one at a time.
-- [ ] Vendor the COG protocol: a block cache, a 64 kB first read, honest 256 px tiles, and abort support.
-- [ ] Read every mosaic's header in the background once the page has loaded.
-- [ ] Create the map before awaiting anything; fetch `/site.json` and the catalog alongside the scripts.
-- [ ] Worker: cache ranges in the Cache API, and mark COG responses immutable.
-- [ ] hap-mosaics: try JPEG or WebP blocks on the `GoogleMapsCompatible` grid for one mosaic, and compare on `hapmap-dev`.
-- [ ] Build the page with Vite and serve its scripts from the Worker.
+- [x] Stop Chrome queueing COG range reads: a URL per range, in `src/cog.js` (21 October 2026).
+- [x] Our own COG reader, `src/cog.js`: a shared block cache, 64 kB header reads, workers, full-resolution 512 px tiles, and aborts.
+- [x] Read the headers of the mosaics in view in the background once the map is idle.
+- [x] Create the map before awaiting anything; preload `/site.json` and the catalog index.
+- [x] Worker: keep ranges in memory and the edge cache, cacheable for a day; serve `/web-items.json`.
+- [x] WebP web copies of all 33 mosaics under `web/` (`scripts/web-cogs.py`), on their own grids rather than `GoogleMapsCompatible`, which would resample them again.
+- [x] Build the page with Vite and serve its scripts from the Worker.
+- [x] Deploy to `hapmap-dev` (version 952debd5) and measure: year changes 4.6–5.4 s to 1.3 s.
+- [ ] Make a web copy whenever a mosaic is published: fold `scripts/web-cogs.py` into hap-mosaics' `publish.py`, or run it after.
+- [ ] Promote to production, where the edge cache can work.
 
 ## Later
 

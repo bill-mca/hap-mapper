@@ -138,3 +138,33 @@ Building the page with Vite and serving its scripts from the Worker would trim t
 The scripts are not kept in the repository.
 In outline: agent-browser opened the dev site with an init script that wrapped `fetch` to log each COG `Range` header (and, for the trial, to add `cache: 'no-store'`); each step called `hapmap.setYear` or moved `hapmap.map`, waited for `idle`, and dumped `performance.getEntriesByType('resource')`, whose `requestStart − startTime` is the time Chrome held a request back.
 Server timings came from `curl -w` against `hapmap-dev.u5007063.workers.dev`, block sizes from `gdal_translate -srcwin` on `/vsicurl/`, and the protocol's behaviour from reading `@geomatico/maplibre-cog-protocol@0.9.0` and the esm.sh bundle the page actually loads.
+
+## As built (21 October 2026)
+
+The same day, every remedy above was built and deployed to `hapmap-dev` (version 952debd5), except Vite's trimming of geotiff.js's codecs, which it splits out and loads only when a COG needs them.
+
+- **`src/cog.js`** replaces maplibre-cog-protocol.
+  Each range is read from its own URL (`/cog/x.tif?r=<start>-<end>`, with the matching `Range` header), so Chrome never queues them, and each stays cacheable.
+  Header reads are rounded out to 64 kB blocks.
+  COG blocks are decoded once, in workers (WebP and JPEG by the browser's own decoder), and kept in a 128 MB cache shared by every layer.
+  Tiles are 512 px at the resolution the screen needs, from the overview no more than a quarter coarser; MapLibre's abort signal stops downloads no other tile is waiting for.
+- **The page** starts the map before fetching anything, preloads `/site.json` and `/web-items.json`, follows the map with the stack while it moves, and reads the headers of mosaics in view in the background once the map is idle.
+  Vite bundles it, with MapLibre, the geocoder and geotiff.js from npm; hashed assets are cached for a year.
+- **The Worker** keeps closed ranges in memory (48 MB an isolate) and in the edge cache, marks them cacheable for a day, and serves `/web-items.json`: the catalog's 39 Web Mercator items, walked beside R2, without frame lists, in one request, kept five minutes.
+- **Web copies**: `scripts/web-cogs.py` re-encoded the 33 mosaics the map shows as RGBA WebP at quality 85, on the same grid with the same overviews, 7.6 GB in all under `web/` in the bucket (see [r2-inventory.md](r2-inventory.md)).
+  The map draws them; the lossless masters stay at `/cog/` for GIS use and the click popup.
+
+Measured the same way as above, cold browser, the live `hapmap-dev` before (version 482e61a4, at its preview URL) and after, two interleaved rounds each:
+
+| step | before | after | COG bytes, before → after |
+|---|---|---|---|
+| 2025 → 1985 (Intent) | 4.7 s, 4.9 s | 1.3 s, 1.3 s | 9.7 MB → 1.2–1.7 MB |
+| 1985 → 1968 | 5.0 s, 5.0 s | 1.3 s, 1.3 s | 15.0 MB → 1.2 MB |
+| 1985 → 1955 | 5.4 s, 4.6 s | 1.3 s, 1.3 s | 2.7 MB → 2.8 MB (from the master, before its web copy was up) |
+| zoom in two levels on 1955 | 4.1 s, 3.6 s | 0.6 s, 0.7 s | 3.5 MB → 2.0 MB |
+| pan 700 px on 1955 | 1.9 s, 1.4 s | 0.3 s, 0.3 s | 1.8 MB → 0.7 MB |
+
+A year change now takes the 800 ms fade and little more; the new tiles are also at full resolution where the old ones were at half.
+A fast scrub from 1992 to 1955 settles 3.1 s after it starts (it lasts 1.8 s), with five main-thread tasks over 50 ms, none over 70.
+
+Still to do: the edge cache only works on a custom domain, so its effect will show on hapmap.app, not on `workers.dev`; and `/web-items.json` stands in for an ItemCollection that hap-mosaics' `publish.py` could write, which the page would read in its place.
