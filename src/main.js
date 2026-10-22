@@ -3,7 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import { cogProtocol, prefetchHeaders, toMercator, valueAt } from './cog.js';
-import { backdropLayers } from './backdrop.js';
+import { backdropLayers, overlayLayers } from './vector-map.js';
 
 // Teach MapLibre how to fetch `cog://` raster tiles (src/cog.js).
 maplibregl.addProtocol('cog', cogProtocol);
@@ -262,7 +262,7 @@ canberraMap.addControl(new maplibregl.GeolocateControl({
 }), 'top-left');
 // ------------------------------------------------------------------
 // Labels: today's place, street and water names from OpenStreetMap,
-// from the same vector tiles as the backdrop (src/backdrop.js), over
+// from the same vector tiles as the backdrop (src/vector-map.js), over
 // every year. The backdrop draws no names, so these are the only ones.
 // Light text in a dark halo reads over pale paddocks and dark roofs
 // alike. The labels button turns them off, and the page remembers.
@@ -352,42 +352,65 @@ var LABEL_LAYERS = [
         paint: Object.assign({ 'text-color': INK }, HALO)
     }
 ];
-var FIRST_LABEL = LABEL_LAYERS[0].id;
+LABEL_LAYERS = LABEL_LAYERS.map(function (l) { return Object.assign({ type: 'symbol', source: 'osm' }, l); });
 
-var labelsOn = true;
-try { labelsOn = localStorage.getItem('hapmap-labels') !== 'off'; } catch (e) { /* storage blocked */ }
+// The overlay: today's roads, rail, lakes and rivers drawn light and
+// semi-transparent over the year's photographs (src/vector-map.js).
+// With the labels as well, it makes a hybrid map of the past. Off
+// until the roads button turns it on.
+var OVERLAY_LAYERS = overlayLayers('osm');
 
-function addLabels() {
-    LABEL_LAYERS.forEach(function (l) {
-        canberraMap.addLayer(Object.assign({ type: 'symbol', source: 'osm' }, l, {
-            layout: Object.assign({ visibility: labelsOn ? 'visible' : 'none' }, l.layout)
+// The mosaics go in beneath this layer: above the backdrop and the
+// present day, below the overlay and the labels.
+var ABOVE_PHOTOS = OVERLAY_LAYERS[0].id;
+
+// A button that shows or hides a set of layers. The page remembers the
+// choice in the browser, under `key`.
+function layerSwitch(key, onByDefault, layers, html, title) {
+    var sw = { on: onByDefault, layers: layers, button: document.createElement('button') };
+    try {
+        var saved = localStorage.getItem(key);
+        if (saved) sw.on = saved === 'on';
+    } catch (e) { /* storage blocked */ }
+    var b = sw.button;
+    b.type = 'button';
+    b.className = 'switch-btn';
+    b.innerHTML = html;
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.setAttribute('aria-pressed', String(sw.on));
+    b.addEventListener('click', function () {
+        sw.on = !sw.on;
+        try { localStorage.setItem(key, sw.on ? 'on' : 'off'); } catch (e) { /* storage blocked */ }
+        layers.forEach(function (l) {
+            if (canberraMap.getLayer(l.id)) canberraMap.setLayoutProperty(l.id, 'visibility', sw.on ? 'visible' : 'none');
+        });
+        b.setAttribute('aria-pressed', String(sw.on));
+        if (BACKDROP) renderAttribution();
+    });
+    return sw;
+}
+
+// Add a switch's layers, shown or hidden as it stands.
+function addSwitched(sw) {
+    sw.layers.forEach(function (l) {
+        canberraMap.addLayer(Object.assign({}, l, {
+            layout: Object.assign({}, l.layout, { visibility: sw.on ? 'visible' : 'none' })
         }));
     });
 }
 
-function setLabels(on) {
-    labelsOn = on;
-    try { localStorage.setItem('hapmap-labels', on ? 'on' : 'off'); } catch (e) { /* storage blocked */ }
-    LABEL_LAYERS.forEach(function (l) {
-        if (canberraMap.getLayer(l.id)) canberraMap.setLayoutProperty(l.id, 'visibility', on ? 'visible' : 'none');
-    });
-    labelsBtn.setAttribute('aria-pressed', String(on));
-    if (BACKDROP) renderAttribution();
-}
-
-var labelsBtn = document.createElement('button');
-labelsBtn.type = 'button';
-labelsBtn.className = 'labels-btn';
-labelsBtn.textContent = 'Aa';
-labelsBtn.title = 'Show or hide place names';
-labelsBtn.setAttribute('aria-label', 'Place names');
-labelsBtn.setAttribute('aria-pressed', String(labelsOn));
-labelsBtn.addEventListener('click', function () { setLabels(!labelsOn); });
+var labels = layerSwitch('hapmap-labels', true, LABEL_LAYERS, 'Aa', 'Place names');
+var overlay = layerSwitch('hapmap-overlay', false, OVERLAY_LAYERS,
+    '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M3 16 L17 4"/><path d="M5 3 L15 17"/><path d="M2 9 q2.5 -2 5 0 t5 0" stroke-width="1.5"/></svg>',
+    'Roads and water over the photographs');
 canberraMap.addControl({
     onAdd: function () {
         var group = document.createElement('div');
         group.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-        group.appendChild(labelsBtn);
+        group.appendChild(labels.button);
+        group.appendChild(overlay.button);
         return group;
     },
     onRemove: function () {}
@@ -431,9 +454,9 @@ var geocoder = new MaplibreGeocoder(nominatim, {
 document.getElementById('search').appendChild(geocoder.onAdd(canberraMap));
 
 // The backdrop goes in first, at the bottom, then the present day
-// above it, then the labels on top; the mosaics are added beneath the
-// labels as they are first needed, and the timeline is built once the
-// catalog has been read.
+// above it, then the overlay and the labels on top; the mosaics are
+// added beneath the overlay as they are first needed, and the timeline
+// is built once the catalog has been read.
 canberraMap.on('load', async function () {
     var SITE = await sitePromise;
     Object.assign(BASE, SITE.base, { label: String(SITE.base.year) });
@@ -453,7 +476,8 @@ canberraMap.on('load', async function () {
         source: BASE.layerId,
         paint: { 'raster-opacity-transition': { duration: FADE_MS, delay: 0 } }
     });
-    addLabels();
+    addSwitched(overlay);
+    addSwitched(labels);
 
     MOSAICS = await mosaicsLoaded;
     YEARS = Array.from(new Set(MOSAICS.map(function (m) { return m.year; })));
@@ -590,7 +614,7 @@ function ensureLayer(m) {
             'raster-opacity': 0,
             'raster-opacity-transition': { duration: FADE_MS, delay: 0 }
         }
-    }, FIRST_LABEL);
+    }, ABOVE_PHOTOS);
 }
 
 // Fade a layer to an opacity, or fade it out and then hide it, so it
@@ -608,7 +632,7 @@ function fade(layer, opacity) {
     }
 }
 
-// Layers joining the stack fade in, in stack order, beneath the labels;
+// Layers joining the stack fade in, in stack order, beneath the overlay;
 // layers leaving it fade out. The present day shows only when it is the
 // year chosen; under any other year the backdrop shows wherever that
 // year has no photograph.
@@ -618,7 +642,7 @@ function drawStack() {
     stack = next;
     next.slice().reverse().forEach(function (m) {
         ensureLayer(m);
-        canberraMap.moveLayer(m.layerId, FIRST_LABEL);
+        canberraMap.moveLayer(m.layerId, ABOVE_PHOTOS);
         fade(m, 1);
     });
     leaving.forEach(function (m) { fade(m, 0); });
@@ -655,7 +679,7 @@ function renderCoarse() {
 // Attribution, for only what is on screen: a link to the catalog
 // record of each mosaic drawn, GA's credit for the photographs, and
 // the present day, and OpenStreetMap wherever the backdrop shows or
-// the labels are on.
+// the overlay or labels are on.
 // ------------------------------------------------------------------
 var attributionEl = document.getElementById('attribution');
 
@@ -670,7 +694,7 @@ function renderAttribution() {
     if (activeYear >= BASE.year) parts.push(BASE.attribution);
     var backdropShows = activeYear < BASE.year &&
         samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); });
-    if (backdropShows || labelsOn) parts.push(BACKDROP.attribution);
+    if (backdropShows || labels.on || overlay.on) parts.push(BACKDROP.attribution);
     attributionEl.innerHTML = parts.join(' &middot; ');
 }
 
