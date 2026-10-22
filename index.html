@@ -18,12 +18,12 @@
 
     <style type="text/css">
         :root {
-            --hap-navy: #16365c;
             --hap-accent: #e6198a; /* magenta */
             --hap-charcoal: #2a2c2e; /* NO_DATA in src/main.js */
             --hap-charcoal-light: #3a3d41;
             --hap-ink-light: #d5d8dc;
             --hap-ink-muted: #9aa0a7;
+            --hap-ink-faint: #6e737a; /* greyed dots, switches turned off */
             --timeline-width: 86px;
         }
 
@@ -60,7 +60,45 @@
             min-width: 0;
             max-width: 100%;
             font-size: 13px;
+            background: var(--hap-charcoal);
+            border: 1px solid var(--hap-charcoal-light);
             box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        #search .maplibregl-ctrl-geocoder--input {
+            color: var(--hap-ink-light);
+        }
+
+        #search .maplibregl-ctrl-geocoder--input::placeholder {
+            color: var(--hap-ink-muted);
+        }
+
+        #search .maplibregl-ctrl-geocoder--icon {
+            fill: var(--hap-ink-muted);
+        }
+
+        #search .maplibregl-ctrl-geocoder--button {
+            background: var(--hap-charcoal);
+        }
+
+        #search .maplibregl-ctrl-geocoder--button:hover .maplibregl-ctrl-geocoder--icon-close {
+            fill: var(--hap-ink-light);
+        }
+
+        #search .maplibregl-ctrl-geocoder .suggestions {
+            background: var(--hap-charcoal);
+            border: 1px solid var(--hap-charcoal-light);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #search .maplibregl-ctrl-geocoder .suggestions > li > a {
+            color: var(--hap-ink-light);
+        }
+
+        #search .maplibregl-ctrl-geocoder .suggestions > .active > a,
+        #search .maplibregl-ctrl-geocoder .suggestions > li > a:hover {
+            color: #fff;
+            background: var(--hap-charcoal-light);
         }
 
         /* The plugin draws its own clear button */
@@ -86,22 +124,35 @@
             -webkit-user-select: none;
         }
 
+        /* A raised, light grey button, pressed in while held */
         #play-btn {
-            margin: 12px 0 8px;
-            width: 44px;
-            height: 44px;
-            border: 2px solid var(--hap-accent);
-            border-radius: 50%;
-            background: transparent;
-            color: var(--hap-accent);
-            font-size: 16px;
+            margin: 12px 0 10px;
+            width: 46px;
+            height: 40px;
+            border: none;
+            border-radius: 9px;
+            background: linear-gradient(#e4e6e9, #c3c7cc);
+            color: var(--hap-charcoal);
+            font-size: 15px;
+            line-height: 1;
             cursor: pointer;
             flex: none;
+            box-shadow: 0 3px 0 #85898f, 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.06s, box-shadow 0.06s, background 0.15s;
         }
 
         #play-btn:hover {
-            background: var(--hap-accent);
-            color: #fff;
+            background: linear-gradient(#f2f3f5, #d3d6da);
+        }
+
+        #play-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #85898f, 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #play-btn:focus-visible {
+            outline: 2px solid var(--hap-ink-light);
+            outline-offset: 3px;
         }
 
         #track {
@@ -168,7 +219,7 @@
 
         /* A year whose sharpest imagery in view is coarser than the screen */
         .year-dot.coarse {
-            background: #6e737a;
+            background: var(--hap-ink-faint);
         }
 
         /* Draggable year handle */
@@ -197,22 +248,57 @@
 
         /* Zoomed in past what the photographs on screen can show */
         #handle.coarse {
-            background: #6e737a;
+            background: var(--hap-ink-faint);
         }
 
         /* ---- Click popup: which photograph this spot came from ---- */
-        .maplibregl-popup-content {
+        #map .maplibregl-popup-content {
             font-size: 13px;
             line-height: 1.45;
-            color: #1d2733;
+            color: var(--hap-ink-light);
+            background: var(--hap-charcoal);
+            border: 1px solid var(--hap-charcoal-light);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
             padding: 10px 14px;
             max-width: 300px;
         }
 
+        /* The popup's pointer, in the popup's charcoal whichever side it is on */
+        #map .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+        #map .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+        #map .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+            border-bottom-color: var(--hap-charcoal);
+        }
+
+        #map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+        #map .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+        #map .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+            border-top-color: var(--hap-charcoal);
+        }
+
+        #map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+            border-right-color: var(--hap-charcoal);
+        }
+
+        #map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+            border-left-color: var(--hap-charcoal);
+        }
+
+        #map .maplibregl-popup-close-button {
+            color: var(--hap-ink-muted);
+            font-size: 18px;
+            padding: 0 6px;
+        }
+
+        #map .maplibregl-popup-close-button:hover {
+            color: #fff;
+            background: var(--hap-charcoal-light);
+        }
+
         .frame-pop h4 {
-            margin: 0 0 4px;
+            margin: 0 18px 4px 0;
             font-size: 14px;
-            color: var(--hap-navy);
+            color: #fff;
         }
 
         .frame-pop p {
@@ -220,7 +306,7 @@
         }
 
         .frame-pop .muted {
-            color: #54657c;
+            color: var(--hap-ink-muted);
         }
 
         .frame-pop .actions {
@@ -232,9 +318,9 @@
 
         .frame-pop button,
         .frame-pop a.btn {
-            border: 1px solid var(--hap-navy);
-            background: #fff;
-            color: var(--hap-navy);
+            border: 1px solid var(--hap-ink-faint);
+            background: transparent;
+            color: var(--hap-ink-light);
             border-radius: 4px;
             padding: 3px 8px;
             font-size: 12px;
@@ -245,8 +331,9 @@
         .frame-pop button:hover,
         .frame-pop a.btn:hover,
         .frame-pop button[aria-pressed="true"] {
-            background: var(--hap-navy);
-            color: #fff;
+            background: var(--hap-ink-light);
+            border-color: var(--hap-ink-light);
+            color: var(--hap-charcoal);
         }
 
         /* ---- The photograph ---- */
@@ -254,7 +341,7 @@
             position: fixed;
             inset: 0;
             z-index: 20;
-            background: rgba(11, 22, 34, 0.86);
+            background: rgba(12, 13, 14, 0.88);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -267,7 +354,8 @@
 
         #photo figure {
             margin: 0;
-            background: #fff;
+            background: var(--hap-charcoal);
+            border: 1px solid var(--hap-charcoal-light);
             border-radius: 6px;
             padding: 10px 12px 12px;
             max-width: min(96vw, 900px);
@@ -275,7 +363,16 @@
             display: flex;
             flex-direction: column;
             font-size: 13px;
-            color: #1d2733;
+            color: var(--hap-ink-light);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        #photo strong {
+            color: #fff;
+        }
+
+        #photo a {
+            color: var(--hap-ink-light);
         }
 
         #photo header {
@@ -292,7 +389,11 @@
             font-size: 22px;
             line-height: 1;
             cursor: pointer;
-            color: #54657c;
+            color: var(--hap-ink-muted);
+        }
+
+        #photo-close:hover {
+            color: #fff;
         }
 
         #photo .frame {
@@ -312,6 +413,31 @@
 
         #photo figcaption {
             margin-top: 8px;
+        }
+
+        /* ---- The one-time hint for the two-finger year swipe, on touch screens ---- */
+        #gesture-hint {
+            position: absolute;
+            bottom: 22%; /* clear of the credit line, which wraps on phones */
+            left: calc((100% - var(--timeline-width)) / 2);
+            z-index: 30;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: calc(100% - var(--timeline-width) - 32px);
+            box-sizing: border-box;
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.35;
+            text-align: center;
+            color: var(--hap-ink-light);
+            background: rgba(42, 44, 46, 0.92);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        #gesture-hint[hidden] {
+            display: none;
         }
 
         /* ---- Spinner: centred on the map, shown only while data loads ---- */
@@ -348,17 +474,37 @@
             }
         }
 
-        /* ---- The labels and overlay switches, with MapLibre's zoom buttons ---- */
-        .maplibregl-ctrl-group button.switch-btn {
+        /* ---- Map controls: zoom, locate, and the labels and overlay switches ---- */
+        #map .maplibregl-ctrl-group {
+            background: var(--hap-charcoal);
+            border: 1px solid var(--hap-charcoal-light);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        #map .maplibregl-ctrl-group button + button {
+            border-top: 1px solid var(--hap-charcoal-light);
+        }
+
+        #map .maplibregl-ctrl-group button:not(:disabled):hover {
+            background-color: var(--hap-charcoal-light);
+        }
+
+        /* MapLibre draws its icons dark; turn them light, keeping the
+           locate button's blue while it follows the user */
+        #map .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+            filter: invert(1) hue-rotate(180deg) brightness(0.9);
+        }
+
+        #map .maplibregl-ctrl-group button.switch-btn {
             display: flex;
             align-items: center;
             justify-content: center;
             font: 600 13px/1 Georgia, serif;
-            color: #333;
+            color: var(--hap-ink-light);
         }
 
-        .maplibregl-ctrl-group button.switch-btn[aria-pressed="false"] {
-            color: #aaa;
+        #map .maplibregl-ctrl-group button.switch-btn[aria-pressed="false"] {
+            color: var(--hap-ink-faint);
             text-decoration: line-through;
         }
 
@@ -405,6 +551,7 @@
 
     <!-- Spins while the map or the page is fetching data -->
     <div id="spinner" role="status" aria-label="Loading" hidden></div>
+    <div id="gesture-hint" role="status" hidden>Swipe two fingers up or down to travel through the years</div>
 
     <!-- Credits for what is on screen -->
     <div id="attribution"></div>

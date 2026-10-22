@@ -98,7 +98,7 @@ bilby's call (22 October 2026).
 - [x] No OpenStreetMap underneath: Esri's Dark Gray Canvas instead, as Esri draws it, wherever the year on screen has no photograph. (CARTO's Dark Matter now needs an API key.)
 - [x] `npx vite` serves `/site.json` from this checkout's `layers.yaml`, rather than hapmap-dev's.
 - [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
-- [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
+- [x] Dark popups, photograph viewer, search box and map buttons to match (bilby, 22 October 2026), and a raised light grey play button in place of the magenta ring.
 - [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.
 
 ## Place names from OpenStreetMap
@@ -119,3 +119,12 @@ bilby's call (22 October 2026), on branch `feat/hybrid-overlay`.
 - [x] A roads button under **Aa** lays today's roads, rail, building footprints, lakes and rivers from OpenFreeMap over the year's photographs, light and semi-transparent; off by default, remembered in the browser.
 - [x] The mosaics go in beneath the overlay, and the labels stay on top of it.
 - [ ] bilby: try it on hapmap-dev and tune the colours and opacities in `src/vector-map.js`.
+
+## Swipe through the years
+
+bilby's call (22 October 2026), on branch `feat/timeline-gestures`: no oblique 3D view; touch gestures for the timeline instead.
+
+- [x] A flat map: tilting is off, by mouse and by touch.
+- [x] Two fingers side by side, swiped up or down together, step between the years with a dot, 40 px a year, scrolling like a list (up is back in time); the map holds still while they do, and a pinch still zooms.
+- [x] A one-time hint on touch screens.
+- [ ] bilby: try it on a real phone; the step size and direction are `SWIPE_STEP_PX` and `isYearSwipe` in `src/main.js`.

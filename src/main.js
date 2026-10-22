@@ -238,6 +238,11 @@ var canberraMap = new maplibregl.Map({
     bounds: [[149.0712015, -35.3140388], [149.1567188, -35.2841504]],
     fitBoundsOptions: { padding: 40 },
     maxZoom: 21,
+    // A flat map: no tilting into an oblique view, by mouse or by touch.
+    // The two-finger swipe that would tilt it changes the year instead.
+    maxPitch: 0,
+    pitchWithRotate: false,
+    touchPitch: false,
     attributionControl: false,
     style: {
         version: 8,
@@ -848,6 +853,112 @@ document.addEventListener('keydown', function (e) {
     var year = e.key === 'ArrowUp' ? nextLitYear(1) : e.key === 'ArrowDown' ? nextLitYear(-1) : null;
     if (year !== null) setYear(year);
 });
+
+// ------------------------------------------------------------------
+// Touch: two fingers side by side, swiped up or down together, step
+// between the years with a dot, as the arrow keys do. It scrolls the
+// timeline as a phone scrolls a list with the newest at the top: swipe
+// up to go back in time, down to come forward. It is the
+// gesture MapLibre would use to tilt the map, which is turned off; a
+// pinch moves the fingers apart rather than together, so it still
+// zooms. Once a swipe is recognised the map stops panning until the
+// fingers lift.
+// ------------------------------------------------------------------
+var SWIPE_STEP_PX = 40; // finger travel per year
+var SWIPE_START_PX = 6; // travel before deciding what the gesture is
+var swipe = null; // { start: [p, p], anchor, scrubbing } while two fingers are down
+
+function touchPoints(e) {
+    return [0, 1].map(function (i) { return [e.touches[i].clientX, e.touches[i].clientY]; });
+}
+
+// Do two finger movements make a vertical swipe together? Each moves
+// more up or down than sideways, both the same way, and the fingers
+// sit side by side rather than one above the other.
+function isYearSwipe(start, now) {
+    var a = [now[0][0] - start[0][0], now[0][1] - start[0][1]];
+    var b = [now[1][0] - start[1][0], now[1][1] - start[1][1]];
+    var apart = [start[1][0] - start[0][0], start[1][1] - start[0][1]];
+    return Math.abs(a[1]) > Math.abs(a[0]) && Math.abs(b[1]) > Math.abs(b[0]) &&
+        (a[1] > 0) === (b[1] > 0) && Math.abs(apart[0]) > Math.abs(apart[1]);
+}
+
+function setMapGestures(on) {
+    [canberraMap.dragPan, canberraMap.touchZoomRotate].forEach(function (h) { on ? h.enable() : h.disable(); });
+}
+
+// Listening on the map's outer element, in the capture phase, sees each
+// touch before MapLibre does, so a swipe's moves can be kept from it.
+var mapEl = canberraMap.getContainer();
+
+mapEl.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2) {
+        var p = touchPoints(e);
+        swipe = { start: p, anchor: (p[0][1] + p[1][1]) / 2, scrubbing: false, decided: false };
+    } else if (swipe && !swipe.scrubbing) {
+        swipe = null; // a third finger: not a swipe
+    }
+}, { capture: true, passive: true });
+
+mapEl.addEventListener('touchmove', function (e) {
+    if (!swipe || e.touches.length !== 2) return;
+    var p = touchPoints(e);
+    if (!swipe.decided) {
+        var moved = Math.max(Math.abs(p[0][1] - swipe.start[0][1]), Math.abs(p[1][1] - swipe.start[1][1]),
+            Math.abs(p[0][0] - swipe.start[0][0]), Math.abs(p[1][0] - swipe.start[1][0]));
+        if (moved < SWIPE_START_PX) return;
+        swipe.decided = true;
+        swipe.scrubbing = isYearSwipe(swipe.start, p);
+        if (!swipe.scrubbing) return; // a pinch or a pan: the map's
+        stopPlayback();
+        closeFrame();
+        setMapGestures(false);
+        swipe.anchor = (p[0][1] + p[1][1]) / 2;
+    }
+    if (!swipe.scrubbing) return;
+    e.stopPropagation();
+    e.preventDefault();
+    var y = (p[0][1] + p[1][1]) / 2;
+    while (Math.abs(y - swipe.anchor) >= SWIPE_STEP_PX) {
+        var down = y > swipe.anchor;
+        swipe.anchor += down ? SWIPE_STEP_PX : -SWIPE_STEP_PX;
+        var year = nextLitYear(down ? 1 : -1);
+        if (year === null) {
+            swipe.anchor = y; // at the end of the timeline: wait here
+            break;
+        }
+        setYear(year);
+        if (navigator.vibrate) navigator.vibrate(8);
+    }
+}, { capture: true, passive: false });
+
+function endSwipe(e) {
+    if (!swipe || e.touches.length >= 2) return;
+    var was = swipe.scrubbing;
+    swipe = null;
+    if (was) {
+        e.stopPropagation();
+        setMapGestures(true);
+        gestureHint.hidden = true;
+    }
+}
+mapEl.addEventListener('touchend', endSwipe, { capture: true });
+mapEl.addEventListener('touchcancel', endSwipe, { capture: true });
+
+// A one-time hint on touch screens, which offer no other clue that the
+// gesture exists. It goes at the first tap, the first swipe, or after
+// eight seconds, and is not shown again.
+var gestureHint = document.getElementById('gesture-hint');
+(function () {
+    var seen = true;
+    try { seen = localStorage.getItem('hapmap-gesture-hint') === 'seen'; } catch (e) { /* storage blocked */ }
+    if (seen || !window.matchMedia('(pointer: coarse)').matches) return;
+    try { localStorage.setItem('hapmap-gesture-hint', 'seen'); } catch (e) { /* storage blocked */ }
+    gestureHint.hidden = false;
+    var hide = function () { gestureHint.hidden = true; };
+    setTimeout(hide, 8000);
+    mapEl.addEventListener('touchstart', hide, { once: true, passive: true });
+})();
 
 // ------------------------------------------------------------------
 // Playback: animate through the years with a dot

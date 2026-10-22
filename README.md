@@ -3,13 +3,16 @@
 A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for the Hap-Map project, showing historical aerial photography of Canberra at [hapmap.app](https://hapmap.app).
 
 Drag the year handle on the timeline, or press the play button, to travel through the years.
+On a touch screen, swipe two fingers up or down anywhere on the map to step between the years with a dot, scrolling the timeline as a phone scrolls a list: swipe up to go back in time, down to come forward. A hint says so on the first visit.
+The arrow keys do the same on a keyboard.
+The map stays flat: the two-finger swipe that would tilt it into an oblique view changes the year instead, and pinching still zooms.
 The handle can rest on any year.
 A magenta dot marks each year with a mosaic that covers more than 30% of the view, or that fits wholly inside it, so the dots change as the map moves.
 The map shows the year of the handle's dot, or of the nearest dot below it, and every mosaic of that year in view, the sharpest on top.
 Nothing older shows through: wherever that year has no photograph, a dark grey map of today's Canberra shows instead.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
 The present day, at the top of the timeline, is Esri World Imagery.
-The page is dark: a charcoal map and timeline, with magenta for the dots, the handle and the play button.
+The page is dark throughout: a charcoal map, timeline, map buttons, search box, click popup and photograph viewer, with magenta for the dots and the handle, and a raised light grey play button.
 
 There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.
