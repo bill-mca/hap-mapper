@@ -3,7 +3,7 @@
 A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for the Hap-Map project, showing historical aerial photography of Canberra at [hapmap.app](https://hapmap.app).
 
 Drag the year handle on the timeline, or press the play button, to travel through the years.
-On a touch screen, swipe two fingers up or down anywhere on the map to step between the years with a dot; the handle follows the fingers, so down is back in time, and a hint says so on the first visit.
+On a touch screen, swipe two fingers up or down anywhere on the map to step between the years with a dot, scrolling the timeline as a phone scrolls a list: swipe up to go back in time, down to come forward. A hint says so on the first visit.
 The arrow keys do the same on a keyboard.
 The map stays flat: the two-finger swipe that would tilt it into an oblique view changes the year instead, and pinching still zooms.
 The handle can rest on any year.

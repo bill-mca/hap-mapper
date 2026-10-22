@@ -125,6 +125,6 @@ bilby's call (22 October 2026), on branch `feat/hybrid-overlay`.
 bilby's call (22 October 2026), on branch `feat/timeline-gestures`: no oblique 3D view; touch gestures for the timeline instead.
 
 - [x] A flat map: tilting is off, by mouse and by touch.
-- [x] Two fingers side by side, swiped up or down together, step between the years with a dot, 40 px a year; the map holds still while they do, and a pinch still zooms.
+- [x] Two fingers side by side, swiped up or down together, step between the years with a dot, 40 px a year, scrolling like a list (up is back in time); the map holds still while they do, and a pinch still zooms.
 - [x] A one-time hint on touch screens.
 - [ ] bilby: try it on a real phone; the step size and direction are `SWIPE_STEP_PX` and `isYearSwipe` in `src/main.js`.

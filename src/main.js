@@ -856,8 +856,9 @@ document.addEventListener('keydown', function (e) {
 
 // ------------------------------------------------------------------
 // Touch: two fingers side by side, swiped up or down together, step
-// between the years with a dot, as the arrow keys do. The handle
-// follows the fingers: down the screen is back in time. It is the
+// between the years with a dot, as the arrow keys do. It scrolls the
+// timeline as a phone scrolls a list with the newest at the top: swipe
+// up to go back in time, down to come forward. It is the
 // gesture MapLibre would use to tilt the map, which is turned off; a
 // pinch moves the fingers apart rather than together, so it still
 // zooms. Once a swipe is recognised the map stops panning until the
@@ -921,7 +922,7 @@ mapEl.addEventListener('touchmove', function (e) {
     while (Math.abs(y - swipe.anchor) >= SWIPE_STEP_PX) {
         var down = y > swipe.anchor;
         swipe.anchor += down ? SWIPE_STEP_PX : -SWIPE_STEP_PX;
-        var year = nextLitYear(down ? -1 : 1);
+        var year = nextLitYear(down ? 1 : -1);
         if (year === null) {
             swipe.anchor = y; // at the end of the timeline: wait here
             break;
