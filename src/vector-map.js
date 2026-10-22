@@ -133,17 +133,25 @@ var O_MOTORWAY = '#e6198a';
 // lines end square, flush with the node.
 var O_LINES = { 'line-cap': 'butt', 'line-join': 'round' };
 
+// Standing water only: lakes, ponds and reservoirs. A river's extent is
+// left out; its centre line is in the waterways layer.
+var STILL_WATER = polygons(['all',
+    ['!=', ['get', 'brunnel'], 'tunnel'],
+    ['!=', ['get', 'class'], 'river']]);
+
+var MAIN_ROADS = ['trunk', 'primary', 'secondary', 'tertiary'];
+
 // Bottom to top, over the photographs.
 export function overlayLayers(source) {
     var layers = [
         {
             id: 'water', type: 'fill', 'source-layer': 'water',
-            filter: polygons(['!=', ['get', 'brunnel'], 'tunnel']),
+            filter: STILL_WATER,
             paint: { 'fill-color': O_WATER, 'fill-opacity': 0.2 }
         },
         {
             id: 'shores', type: 'line', 'source-layer': 'water',
-            filter: polygons(['!=', ['get', 'brunnel'], 'tunnel']),
+            filter: STILL_WATER,
             layout: O_LINES,
             paint: { 'line-color': O_WATER, 'line-opacity': 0.7, 'line-width': widths([10, 0.5, 18, 2]) }
         },
@@ -173,8 +181,22 @@ export function overlayLayers(source) {
             paint: { 'line-color': O_ROAD, 'line-opacity': 0.45, 'line-width': widths([12, 0.5, 18, 5]) }
         },
         {
+            // A soft magenta glow under the main roads and motorways:
+            // the same lines, three times as wide, blurred to nothing at
+            // their edges.
+            id: 'roads-glow', type: 'line', 'source-layer': 'transportation', minzoom: 8,
+            filter: roadClass(MAIN_ROADS.concat(['motorway'])),
+            layout: O_LINES,
+            paint: {
+                'line-color': O_MOTORWAY,
+                'line-opacity': 0.35,
+                'line-width': widths([8, 3, 18, 30]),
+                'line-blur': widths([8, 3, 18, 30])
+            }
+        },
+        {
             id: 'roads-major', type: 'line', 'source-layer': 'transportation', minzoom: 8,
-            filter: roadClass(['trunk', 'primary', 'secondary', 'tertiary']),
+            filter: roadClass(MAIN_ROADS),
             layout: O_LINES,
             paint: { 'line-color': O_MAJOR, 'line-opacity': 0.6, 'line-width': widths([8, 0.75, 18, 8]) }
         },
