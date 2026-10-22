@@ -12,7 +12,7 @@ The map shows the year of the handle's dot, or of the nearest dot below it, and 
 Nothing older shows through: wherever that year has no photograph, a dark grey map of today's Canberra shows instead.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
 The present day, at the top of the timeline, is Esri World Imagery.
-The page is dark: a charcoal map and timeline, with magenta for the dots, the handle and the play button.
+The page is dark throughout: a charcoal map, timeline, map buttons, search box, click popup and photograph viewer, with magenta for the dots and the handle, and a raised light grey play button.
 
 There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.

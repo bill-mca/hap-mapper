@@ -98,7 +98,7 @@ bilby's call (22 October 2026).
 - [x] No OpenStreetMap underneath: Esri's Dark Gray Canvas instead, as Esri draws it, wherever the year on screen has no photograph. (CARTO's Dark Matter now needs an API key.)
 - [x] `npx vite` serves `/site.json` from this checkout's `layers.yaml`, rather than hapmap-dev's.
 - [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
-- [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
+- [x] Dark popups, photograph viewer, search box and map buttons to match (bilby, 22 October 2026), and a raised light grey play button in place of the magenta ring.
 - [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.
 
 ## Place names from OpenStreetMap
