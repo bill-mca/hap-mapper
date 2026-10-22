@@ -3,6 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import { cogProtocol, prefetchHeaders, toMercator, valueAt } from './cog.js';
+import { backdropLayers } from './backdrop.js';
 
 // Teach MapLibre how to fetch `cog://` raster tiles (src/cog.js).
 maplibregl.addProtocol('cog', cogProtocol);
@@ -220,8 +221,7 @@ var GA_CREDIT = 'Photographs &copy; <a href="https://www.ga.gov.au/scientific-to
 var BASE = { layerId: 'imagery-base', year: 2025, label: '2025' };
 var BACKDROP = null;
 
-// Wherever the year on screen has no photograph, the backdrop shows,
-// and charcoal where it has not loaded.
+// Charcoal until the backdrop's first tiles arrive.
 var NO_DATA = '#2a2c2e';
 
 var MOSAICS = []; // every mosaic shown, oldest first
@@ -262,14 +262,11 @@ canberraMap.addControl(new maplibregl.GeolocateControl({
 }), 'top-left');
 // ------------------------------------------------------------------
 // Labels: today's place, street and water names from OpenStreetMap,
-// by way of OpenFreeMap's vector tiles, over every year. The backdrop
-// is Esri's unlabelled dark grey, so these are the only names drawn.
+// from the same vector tiles as the backdrop (src/backdrop.js), over
+// every year. The backdrop draws no names, so these are the only ones.
 // Light text in a dark halo reads over pale paddocks and dark roofs
 // alike. The labels button turns them off, and the page remembers.
 // ------------------------------------------------------------------
-var LABELS_CREDIT = '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
-    '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
-    'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
 var NAME = ['coalesce', ['get', 'name_en'], ['get', 'name']];
 var HALO = { 'text-halo-color': 'rgba(0, 0, 0, 0.8)', 'text-halo-width': 1.5, 'text-halo-blur': 0.5 };
 var INK = '#f2f2f2';
@@ -361,7 +358,6 @@ var labelsOn = true;
 try { labelsOn = localStorage.getItem('hapmap-labels') !== 'off'; } catch (e) { /* storage blocked */ }
 
 function addLabels() {
-    canberraMap.addSource('osm', { type: 'vector', url: 'https://tiles.openfreemap.org/planet' });
     LABEL_LAYERS.forEach(function (l) {
         canberraMap.addLayer(Object.assign({ type: 'symbol', source: 'osm' }, l, {
             layout: Object.assign({ visibility: labelsOn ? 'visible' : 'none' }, l.layout)
@@ -435,20 +431,16 @@ var geocoder = new MaplibreGeocoder(nominatim, {
 document.getElementById('search').appendChild(geocoder.onAdd(canberraMap));
 
 // The backdrop goes in first, at the bottom, then the present day
-// above it; the mosaics are added above both as they are first needed,
-// and the timeline is built once the catalog has been read.
+// above it, then the labels on top; the mosaics are added beneath the
+// labels as they are first needed, and the timeline is built once the
+// catalog has been read.
 canberraMap.on('load', async function () {
     var SITE = await sitePromise;
     Object.assign(BASE, SITE.base, { label: String(SITE.base.year) });
     BACKDROP = SITE.backdrop;
     activeYear = BASE.year;
-    canberraMap.addSource('backdrop', {
-        type: 'raster',
-        tiles: [BACKDROP.tiles],
-        tileSize: BACKDROP.tileSize,
-        maxzoom: BACKDROP.maxzoom
-    });
-    canberraMap.addLayer({ id: 'backdrop', type: 'raster', source: 'backdrop' });
+    canberraMap.addSource('osm', { type: 'vector', url: BACKDROP.url });
+    backdropLayers('osm').forEach(function (l) { canberraMap.addLayer(l); });
     canberraMap.addSource(BASE.layerId, {
         type: 'raster',
         tiles: [BASE.tiles],
@@ -662,8 +654,8 @@ function renderCoarse() {
 // ------------------------------------------------------------------
 // Attribution, for only what is on screen: a link to the catalog
 // record of each mosaic drawn, GA's credit for the photographs, and
-// the present day or the backdrop wherever either shows, and the
-// labels while they are on.
+// the present day, and OpenStreetMap wherever the backdrop shows or
+// the labels are on.
 // ------------------------------------------------------------------
 var attributionEl = document.getElementById('attribution');
 
@@ -675,12 +667,10 @@ function renderAttribution() {
         }).join(', ') + ' by hapmap, CC BY 4.0');
         parts.push(GA_CREDIT);
     }
-    if (activeYear >= BASE.year) {
-        parts.push(BASE.attribution);
-    } else if (samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); })) {
-        parts.push(BACKDROP.attribution);
-    }
-    if (labelsOn) parts.push(LABELS_CREDIT);
+    if (activeYear >= BASE.year) parts.push(BASE.attribution);
+    var backdropShows = activeYear < BASE.year &&
+        samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); });
+    if (backdropShows || labelsOn) parts.push(BACKDROP.attribution);
     attributionEl.innerHTML = parts.join(' &middot; ');
 }
 

@@ -6,7 +6,7 @@ Drag the year handle on the timeline, or press the play button, to travel throug
 The handle can rest on any year.
 A magenta dot marks each year with a mosaic that covers more than 30% of the view, or that fits wholly inside it, so the dots change as the map moves.
 The map shows the year of the handle's dot, or of the nearest dot below it, and every mosaic of that year in view, the sharpest on top.
-Nothing older shows through: wherever that year has no photograph, Esri's dark grey canvas shows instead.
+Nothing older shows through: wherever that year has no photograph, a dark grey map of today's Canberra shows instead.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
 The present day, at the top of the timeline, is Esri World Imagery.
 The page is dark: a charcoal map and timeline, with magenta for the dots, the handle and the play button.
@@ -15,7 +15,7 @@ There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.
 The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
 Today's place, street and water names from OpenStreetMap are written over every year, from OpenFreeMap's vector tiles: light text in a dark halo, so it reads over any photograph.
-The dark grey canvas underneath is Esri's unlabelled one, so these are the only names on the map.
+The dark grey map comes from the same tiles, drawn by [`src/backdrop.js`](src/backdrop.js) in the greys of Esri's Dark Gray Canvas, which it replaced; it draws no names, so the labels are the only ones on the map.
 The **Aa** button under the zoom buttons hides them, and the page remembers the choice.
 
 Click the map to see which photograph that spot came from and the day it was flown.
