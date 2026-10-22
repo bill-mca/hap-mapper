@@ -99,3 +99,12 @@ bilby's call (22 October 2026).
 - [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
 - [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
 - [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.
+
+## Place names from OpenStreetMap
+
+bilby's call (22 October 2026): labels everywhere, since the backdrop is Esri's unlabelled Dark Gray Base.
+
+- [x] OpenFreeMap vector tiles and fonts: suburbs, towns, streets (no paths or cycle routes), lakes and rivers, above every mosaic.
+- [x] An **Aa** button to hide them, remembered in the browser; OpenFreeMap and OpenStreetMap credited while they show.
+- [ ] Perhaps: fade the labels a little on older years, where today's names can sit over paddocks.
+- [ ] Perhaps: serve our own PMTiles cut of the region from R2, if OpenFreeMap proves slow or unreliable.

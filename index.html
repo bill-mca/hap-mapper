@@ -348,6 +348,17 @@
             }
         }
 
+        /* ---- The labels button, with MapLibre's zoom buttons ---- */
+        .maplibregl-ctrl-group button.labels-btn {
+            font: 600 13px/1 Georgia, serif;
+            color: #333;
+        }
+
+        .maplibregl-ctrl-group button.labels-btn[aria-pressed="false"] {
+            color: #999;
+            text-decoration: line-through;
+        }
+
         /* ---- Attribution: only what is on screen ---- */
         #attribution {
             position: absolute;

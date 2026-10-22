@@ -14,6 +14,9 @@ The page is dark: a charcoal map and timeline, with magenta for the dots, the ha
 There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.
 The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
+Today's place, street and water names from OpenStreetMap are written over every year, from OpenFreeMap's vector tiles: light text in a dark halo, so it reads over any photograph.
+The dark grey canvas underneath is Esri's unlabelled one, so these are the only names on the map.
+The **Aa** button under the zoom buttons hides them, and the page remembers the choice.
 
 Click the map to see which photograph that spot came from and the day it was flown.
 "View photograph" opens GA's preview of it, with a link to download the full scan; clicking the preview opens it in a new tab.

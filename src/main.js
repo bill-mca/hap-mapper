@@ -241,6 +241,7 @@ var canberraMap = new maplibregl.Map({
     attributionControl: false,
     style: {
         version: 8,
+        glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
         sources: {},
         layers: [
             { id: 'background', type: 'background', paint: { 'background-color': NO_DATA } }
@@ -259,6 +260,143 @@ canberraMap.addControl(new maplibregl.GeolocateControl({
     trackUserLocation: true,
     fitBoundsOptions: { maxZoom: 15 }
 }), 'top-left');
+// ------------------------------------------------------------------
+// Labels: today's place, street and water names from OpenStreetMap,
+// by way of OpenFreeMap's vector tiles, over every year. The backdrop
+// is Esri's unlabelled dark grey, so these are the only names drawn.
+// Light text in a dark halo reads over pale paddocks and dark roofs
+// alike. The labels button turns them off, and the page remembers.
+// ------------------------------------------------------------------
+var LABELS_CREDIT = '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
+    '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
+    'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+var NAME = ['coalesce', ['get', 'name_en'], ['get', 'name']];
+var HALO = { 'text-halo-color': 'rgba(0, 0, 0, 0.8)', 'text-halo-width': 1.5, 'text-halo-blur': 0.5 };
+var INK = '#f2f2f2';
+var WATER_INK = '#b9d6ee';
+
+// Bottom to top: when labels collide, the later layer wins its place.
+var LABEL_LAYERS = [
+    {
+        id: 'labels-streets',
+        'source-layer': 'transportation_name',
+        minzoom: 13,
+        // Roads only: paths and tracks would add cycle routes like "C8"
+        filter: ['all',
+            ['match', ['get', 'class'], ['path', 'track'], false, true],
+            ['any',
+                ['match', ['get', 'class'], ['motorway', 'trunk', 'primary', 'secondary', 'tertiary'], true, false],
+                ['>=', ['zoom'], 15]]],
+        layout: {
+            'symbol-placement': 'line',
+            'symbol-spacing': 300,
+            'text-field': NAME,
+            'text-font': ['Noto Sans Regular'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 18, 14],
+            'text-max-angle': 30
+        },
+        paint: Object.assign({ 'text-color': INK }, HALO)
+    },
+    {
+        id: 'labels-waterways',
+        'source-layer': 'waterway',
+        minzoom: 12,
+        filter: ['has', 'name'],
+        layout: {
+            'symbol-placement': 'line',
+            'symbol-spacing': 400,
+            'text-field': NAME,
+            'text-font': ['Noto Sans Italic'],
+            'text-size': 12,
+            'text-letter-spacing': 0.1
+        },
+        paint: Object.assign({ 'text-color': WATER_INK }, HALO)
+    },
+    {
+        id: 'labels-water',
+        'source-layer': 'water_name',
+        filter: ['match', ['geometry-type'], ['Point', 'MultiPoint'], true, false],
+        layout: {
+            'text-field': NAME,
+            'text-font': ['Noto Sans Italic'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 10, 11, 16, 15],
+            'text-letter-spacing': 0.1,
+            'text-max-width': 8
+        },
+        paint: Object.assign({ 'text-color': WATER_INK }, HALO)
+    },
+    {
+        id: 'labels-suburbs',
+        'source-layer': 'place',
+        minzoom: 11,
+        maxzoom: 17,
+        filter: ['match', ['get', 'class'], ['suburb', 'neighbourhood', 'hamlet', 'isolated_dwelling'], true, false],
+        layout: {
+            'text-field': NAME,
+            'text-font': ['Noto Sans Bold'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 16, 13],
+            'text-transform': 'uppercase',
+            'text-letter-spacing': 0.12,
+            'text-max-width': 8
+        },
+        paint: Object.assign({ 'text-color': INK }, HALO)
+    },
+    {
+        id: 'labels-towns',
+        'source-layer': 'place',
+        maxzoom: 14,
+        filter: ['match', ['get', 'class'], ['city', 'town', 'village'], true, false],
+        layout: {
+            'text-field': NAME,
+            'text-font': ['Noto Sans Bold'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 6, 12, 12, 18],
+            'text-max-width': 8
+        },
+        paint: Object.assign({ 'text-color': INK }, HALO)
+    }
+];
+var FIRST_LABEL = LABEL_LAYERS[0].id;
+
+var labelsOn = true;
+try { labelsOn = localStorage.getItem('hapmap-labels') !== 'off'; } catch (e) { /* storage blocked */ }
+
+function addLabels() {
+    canberraMap.addSource('osm', { type: 'vector', url: 'https://tiles.openfreemap.org/planet' });
+    LABEL_LAYERS.forEach(function (l) {
+        canberraMap.addLayer(Object.assign({ type: 'symbol', source: 'osm' }, l, {
+            layout: Object.assign({ visibility: labelsOn ? 'visible' : 'none' }, l.layout)
+        }));
+    });
+}
+
+function setLabels(on) {
+    labelsOn = on;
+    try { localStorage.setItem('hapmap-labels', on ? 'on' : 'off'); } catch (e) { /* storage blocked */ }
+    LABEL_LAYERS.forEach(function (l) {
+        if (canberraMap.getLayer(l.id)) canberraMap.setLayoutProperty(l.id, 'visibility', on ? 'visible' : 'none');
+    });
+    labelsBtn.setAttribute('aria-pressed', String(on));
+    if (BACKDROP) renderAttribution();
+}
+
+var labelsBtn = document.createElement('button');
+labelsBtn.type = 'button';
+labelsBtn.className = 'labels-btn';
+labelsBtn.textContent = 'Aa';
+labelsBtn.title = 'Show or hide place names';
+labelsBtn.setAttribute('aria-label', 'Place names');
+labelsBtn.setAttribute('aria-pressed', String(labelsOn));
+labelsBtn.addEventListener('click', function () { setLabels(!labelsOn); });
+canberraMap.addControl({
+    onAdd: function () {
+        var group = document.createElement('div');
+        group.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+        group.appendChild(labelsBtn);
+        return group;
+    },
+    onRemove: function () {}
+}, 'top-left');
+
 // ------------------------------------------------------------------
 // Search for a present-day place. MapLibre's geocoder plugin asks
 // Nominatim only when Enter is pressed, as Nominatim's usage policy
@@ -323,6 +461,7 @@ canberraMap.on('load', async function () {
         source: BASE.layerId,
         paint: { 'raster-opacity-transition': { duration: FADE_MS, delay: 0 } }
     });
+    addLabels();
 
     MOSAICS = await mosaicsLoaded;
     YEARS = Array.from(new Set(MOSAICS.map(function (m) { return m.year; })));
@@ -459,7 +598,7 @@ function ensureLayer(m) {
             'raster-opacity': 0,
             'raster-opacity-transition': { duration: FADE_MS, delay: 0 }
         }
-    });
+    }, FIRST_LABEL);
 }
 
 // Fade a layer to an opacity, or fade it out and then hide it, so it
@@ -477,17 +616,17 @@ function fade(layer, opacity) {
     }
 }
 
-// Layers joining the stack fade in, in stack order; layers leaving it
-// fade out. The present day shows only when it is the year chosen;
-// under any other year the backdrop shows wherever that year has no
-// photograph.
+// Layers joining the stack fade in, in stack order, beneath the labels;
+// layers leaving it fade out. The present day shows only when it is the
+// year chosen; under any other year the backdrop shows wherever that
+// year has no photograph.
 function drawStack() {
     var next = stackFor(activeYear);
     var leaving = stack.filter(function (m) { return next.indexOf(m) < 0; });
     stack = next;
     next.slice().reverse().forEach(function (m) {
         ensureLayer(m);
-        canberraMap.moveLayer(m.layerId);
+        canberraMap.moveLayer(m.layerId, FIRST_LABEL);
         fade(m, 1);
     });
     leaving.forEach(function (m) { fade(m, 0); });
@@ -523,7 +662,8 @@ function renderCoarse() {
 // ------------------------------------------------------------------
 // Attribution, for only what is on screen: a link to the catalog
 // record of each mosaic drawn, GA's credit for the photographs, and
-// the present day or the backdrop wherever either shows.
+// the present day or the backdrop wherever either shows, and the
+// labels while they are on.
 // ------------------------------------------------------------------
 var attributionEl = document.getElementById('attribution');
 
@@ -540,6 +680,7 @@ function renderAttribution() {
     } else if (samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); })) {
         parts.push(BACKDROP.attribution);
     }
+    if (labelsOn) parts.push(LABELS_CREDIT);
     attributionEl.innerHTML = parts.join(' &middot; ');
 }
 
