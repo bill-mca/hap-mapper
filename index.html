@@ -314,6 +314,31 @@
             margin-top: 8px;
         }
 
+        /* ---- The one-time hint for the two-finger year swipe, on touch screens ---- */
+        #gesture-hint {
+            position: absolute;
+            bottom: 22%; /* clear of the credit line, which wraps on phones */
+            left: calc((100% - var(--timeline-width)) / 2);
+            z-index: 30;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: calc(100% - var(--timeline-width) - 32px);
+            box-sizing: border-box;
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.35;
+            text-align: center;
+            color: var(--hap-ink-light);
+            background: rgba(42, 44, 46, 0.92);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        #gesture-hint[hidden] {
+            display: none;
+        }
+
         /* ---- Spinner: centred on the map, shown only while data loads ---- */
         #spinner {
             position: absolute;
@@ -405,6 +430,7 @@
 
     <!-- Spins while the map or the page is fetching data -->
     <div id="spinner" role="status" aria-label="Loading" hidden></div>
+    <div id="gesture-hint" role="status" hidden>Swipe two fingers up or down to travel through the years</div>
 
     <!-- Credits for what is on screen -->
     <div id="attribution"></div>
