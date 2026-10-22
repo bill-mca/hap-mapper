@@ -4,12 +4,12 @@ A [topotijdreis.nl](https://www.topotijdreis.nl/)-style time-travel webmap for t
 
 Drag the year handle on the timeline, or press the play button, to travel through the years.
 The handle can rest on any year.
-The map then shows every mosaic flown that year where it has imagery, the sharpest on top, and where nothing was flown that year, the most recent earlier photograph shows through.
-Those older years are drawn faint, at 40% opacity, so the newest year on screen stands out as the one being shown.
-An orange dot marks each year with imagery in view, so the dots change as the map moves.
+A magenta dot marks each year with a mosaic that covers more than 30% of the view, or that fits wholly inside it, so the dots change as the map moves.
+The map shows the year of the handle's dot, or of the nearest dot below it, and every mosaic of that year in view, the sharpest on top.
+Nothing older shows through: wherever that year has no photograph, the map is charcoal.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
 The present day, at the top of the timeline, is Esri World Imagery.
-Under every other year the OpenStreetMap street map shows wherever there are no photographs.
+The page is dark: a charcoal map and timeline, with magenta for the dots, the handle and the play button.
 
 There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.
@@ -26,7 +26,7 @@ The credit line at the bottom names only what is on screen, with a link to each 
 - **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), published at `/stac/`.
   The page reads it in one request, from the Worker's `/web-items.json`, and walks `/stac/` itself only if that fails.
   Every Web Mercator mosaic served from hapmap.app is a layer, filed under the year its flying started, so a newly published mosaic appears on the next page load, with no deploy.
-- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, the present-day layer, and the street map underneath.
+- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, and the present-day layer.
   It is what differs between production and dev.
 - **The page** is `index.html` and `src/`: `src/main.js` is the map and the timeline, and `src/cog.js` draws the COGs.
 - **The build**, `npm run build`, bundles the page with [Vite](https://vite.dev/) into `dist/`, turns `layers.yaml` into `dist/site.json`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.
@@ -39,8 +39,8 @@ The credit line at the bottom names only what is on screen, with a link to each 
 - **The bucket** is kept by hap-mosaics' `publish.py`, which uploads what is missing, writes the public catalog, and never overwrites or deletes.
   [docs/r2-inventory.md](docs/r2-inventory.md) is the register of what is in it.
 
-For each year and view the page draws as few mosaics as it can: newest year first and the sharpest first within a year, skipping older mosaics that would add less than 2% of the view, and stopping once the view is covered.
-[docs/timeline-plan.md](docs/timeline-plan.md) has the design and the numbers.
+For each year and view the page draws one year's mosaics, and only those in view.
+[docs/timeline-plan.md](docs/timeline-plan.md) has the original design, in which older years filled the gaps; that is no longer so.
 From the browser console, `hapmap.stack()` lists what is drawn.
 
 The historical layers are Cloud-Optimized GeoTIFFs in EPSG:3857, which is all `src/cog.js` draws.

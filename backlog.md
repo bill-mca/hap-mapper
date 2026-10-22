@@ -87,3 +87,14 @@ The diagnosis is in [docs/loading-performance.md](docs/loading-performance.md) (
 - [ ] Full-scan Blag Map runs of 1980 and 1974–75, for sharpness at street zoom.
 - [ ] The 1962–63, 1968, 1985, 1990 and 1992 sets, once Blag Map has run them.
 - [ ] Find out why `https://hapmap.app` resets connections from hectar while the `workers.dev` address works.
+
+## Dark mode, and dots that mean something
+
+bilby's call (22 October 2026).
+
+- [x] A year has a dot only when one of its mosaics covers more than 30% of the view, or fits wholly inside it; the view is the map left of the timeline.
+- [x] Draw only the year of the dot at or below the handle: no older years showing through at 40%.
+- [x] No OpenStreetMap underneath: charcoal wherever the year on screen has no photograph.
+- [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
+- [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
+- [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.

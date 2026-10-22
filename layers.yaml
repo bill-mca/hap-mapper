@@ -1,5 +1,5 @@
-# What hapmap.app leaves out of the hap-mosaics STAC catalog, the present-day
-# imagery at the top of the timeline, and the street map underneath it all.
+# What hapmap.app leaves out of the hap-mosaics STAC catalog, and the
+# present-day imagery at the top of the timeline.
 #
 # The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
 # published at https://hapmap.app/stac/): every Web Mercator mosaic served from
@@ -33,12 +33,3 @@ base:
   tileSize: 256
   maxzoom: 19
   attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-
-# The street map under every year, showing wherever the year on screen has no
-# imagery. It is not on the timeline.
-backdrop:
-  title: OpenStreetMap
-  tiles: https://tile.openstreetmap.org/{z}/{x}/{y}.png
-  tileSize: 256
-  maxzoom: 19
-  attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"

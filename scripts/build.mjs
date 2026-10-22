@@ -5,8 +5,7 @@
 //
 // The page reads the hap-mosaics STAC catalog itself, in the browser, so the
 // build no longer touches it. It writes /site.json from layers.yaml: the
-// catalog items to leave out, the present-day imagery, and the street map
-// drawn underneath.
+// catalog items to leave out and the present-day imagery.
 // Each Worker serves the settings it was deployed with, which is how the dev
 // and production sites can differ.
 //
@@ -28,16 +27,14 @@ async function main() {
     const spec = YAML.parse(readFileSync(join(ROOT, 'layers.yaml'), 'utf8'));
     const exclude = spec.exclude || [];
     if (!spec.base) throw new Error('layers.yaml: no base layer');
-    if (!spec.backdrop) throw new Error('layers.yaml: no backdrop');
 
     await build({ root: ROOT, logLevel: 'warn' }); // empties dist/ first
     writeFileSync(join(DIST, 'site.json'), JSON.stringify({
         built: new Date().toISOString(),
         exclude,
         base: spec.base,
-        backdrop: spec.backdrop,
     }));
-    console.log(`site.json: ${exclude.length} items left out; base ${spec.base.year} ${spec.base.title}; backdrop ${spec.backdrop.title}`);
+    console.log(`site.json: ${exclude.length} items left out; base ${spec.base.year} ${spec.base.title}`);
 
     // Vite's build() set NODE_ENV=production in this process; left in place,
     // it makes the browser's `npm ci` skip the devDependencies it builds with.

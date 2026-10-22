@@ -14,8 +14,8 @@ maplibregl.setMaxParallelImageRequests(32);
 // Mercator mosaic served from this site is a layer, filed under the year
 // its flying started, unless /site.json leaves it out. `npm run build`
 // writes /site.json from layers.yaml, along with the present-day imagery
-// drawn underneath. A mosaic published to the catalog appears on the next
-// page load.
+// at the top of the timeline. A mosaic published to the catalog appears
+// on the next page load.
 // ------------------------------------------------------------------
 var SITE_URL = 'https://hapmap.app';
 
@@ -215,10 +215,11 @@ var mosaicsLoaded = Promise.all([sitePromise, itemsPromise]).then(function (r) {
 // into a mosaic by the hapmap project, also CC BY 4.0.
 var GA_CREDIT = 'Photographs &copy; <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography" target="_blank" rel="noopener">Geoscience Australia</a>, CC BY 4.0';
 
-// The present day, the newest year on the timeline, and the street map
-// under every other year; both from /site.json.
+// The present day, the newest year on the timeline, from /site.json.
 var BASE = { layerId: 'imagery-base', year: 2025, label: '2025' };
-var BACKDROP = null;
+
+// Wherever the year on screen has no photograph, the map is charcoal.
+var NO_DATA = '#2a2c2e';
 
 var MOSAICS = []; // every mosaic shown, oldest first
 var YEARS = []; // the years they start in
@@ -239,7 +240,7 @@ var canberraMap = new maplibregl.Map({
         version: 8,
         sources: {},
         layers: [
-            { id: 'background', type: 'background', paint: { 'background-color': '#0b1622' } }
+            { id: 'background', type: 'background', paint: { 'background-color': NO_DATA } }
         ]
     }
 });
@@ -292,21 +293,13 @@ var geocoder = new MaplibreGeocoder(nominatim, {
 });
 document.getElementById('search').appendChild(geocoder.onAdd(canberraMap));
 
-// The street map goes in first, at the bottom, then the present day
-// above it; the mosaics are added above both as they are first
-// needed, and the timeline is built once the catalog has been read.
+// The present day goes in first, at the bottom; the mosaics are added
+// above it as they are first needed, and the timeline is built once
+// the catalog has been read.
 canberraMap.on('load', async function () {
     var SITE = await sitePromise;
     Object.assign(BASE, SITE.base, { label: String(SITE.base.year) });
-    BACKDROP = SITE.backdrop;
     activeYear = BASE.year;
-    canberraMap.addSource('backdrop', {
-        type: 'raster',
-        tiles: [BACKDROP.tiles],
-        tileSize: BACKDROP.tileSize,
-        maxzoom: BACKDROP.maxzoom
-    });
-    canberraMap.addLayer({ id: 'backdrop', type: 'raster', source: 'backdrop' });
     canberraMap.addSource(BASE.layerId, {
         type: 'raster',
         tiles: [BASE.tiles],
@@ -328,9 +321,9 @@ canberraMap.on('load', async function () {
     canberraMap.on('moveend', onView);
 });
 
-// While the map moves, the stack follows it a few times a second, so
-// a layer newly in view starts loading before the map stops. The map is
-// left alone while the stack stays the same.
+// While the map moves, the dots and the stack follow it a few times a
+// second, so a layer newly in view starts loading before the map stops.
+// The map is left alone while the stack stays the same.
 var moveTimer = null;
 
 function onMove() {
@@ -338,6 +331,7 @@ function onMove() {
     moveTimer = setTimeout(function () {
         moveTimer = null;
         sampleView();
+        updateDots();
         var next = stackFor(activeYear);
         if (next.length !== stack.length || next.some(function (m, i) { return m !== stack[i]; })) drawStack();
     }, 250);
@@ -357,9 +351,7 @@ function onView() {
 // ------------------------------------------------------------------
 function prefetchInView() {
     canberraMap.once('idle', function () {
-        var inView = MOSAICS.filter(function (m) {
-            return samples.some(function (p) { return covers(m, p); });
-        }).sort(function (a, b) {
+        var inView = MOSAICS.filter(inViewNow).sort(function (a, b) {
             return Math.abs(a.year - activeYear) - Math.abs(b.year - activeYear);
         });
         prefetchHeaders(inView.map(function (m) { return location.origin + m.display; }));
@@ -367,59 +359,73 @@ function prefetchInView() {
 }
 
 // ------------------------------------------------------------------
-// What to draw. For the chosen year, every mosaic from that year or
-// before with imagery in view, newest year on top and the finest
-// mosaic on top within a year, so where nothing was flown in the
-// chosen year the most recent earlier photograph shows through.
-//
-// Walking down from the top, every mosaic of the newest year with
-// imagery in view is drawn; an older one is skipped if it would show
-// in less than 2% of the view. The walk stops once the view is
-// covered: nothing older could be seen, and every layer costs tile
-// requests. "The view" is a 16 x 16 grid of points across the map.
+// What is in view. "The view" is the map left of the timeline, sampled
+// as a 16 x 16 grid of points. A mosaic earns its year a dot when it
+// covers more than 30% of those points, or when the whole of it fits in
+// the view; a sliver at the edge of the view does not.
 // ------------------------------------------------------------------
 var GRID = 16;
-var MIN_SHARE = 0.02;
+var DOT_SHARE = 0.3;
 var FADE_MS = 800;
 var samples = []; // [lng, lat] points across the view
 var stack = []; // the mosaics drawn now, top first
 
-function sampleView() {
+function viewSize() {
     var canvas = canberraMap.getCanvas();
-    var w = canvas.clientWidth;
-    var h = canvas.clientHeight;
+    var w = canvas.clientWidth - document.getElementById('timeline').offsetWidth;
+    return [Math.max(1, w), canvas.clientHeight];
+}
+
+// Does the whole of mosaic m fit in a view w x h pixels? Testing the
+// corners of its bounding box is exact while the map points north.
+function fitsInView(m, w, h) {
+    return m.footprint.every(function (poly) {
+        var b = poly.bbox;
+        return [[b[0], b[1]], [b[0], b[3]], [b[2], b[1]], [b[2], b[3]]].every(function (c) {
+            var pt = canberraMap.project(c);
+            return pt.x >= 0 && pt.x <= w && pt.y >= 0 && pt.y <= h;
+        });
+    });
+}
+
+// Sample the view, then note for every mosaic the share of it that the
+// mosaic covers and whether the mosaic fits inside it.
+function sampleView() {
+    var size = viewSize();
     samples = [];
     for (var i = 0; i < GRID; i++) {
         for (var j = 0; j < GRID; j++) {
-            var ll = canberraMap.unproject([(i + 0.5) * w / GRID, (j + 0.5) * h / GRID]);
+            var ll = canberraMap.unproject([(i + 0.5) * size[0] / GRID, (j + 0.5) * size[1] / GRID]);
             samples.push([ll.lng, ll.lat]);
         }
     }
+    MOSAICS.forEach(function (m) {
+        var hits = 0;
+        samples.forEach(function (p) { if (covers(m, p)) hits++; });
+        m.share = hits / samples.length;
+        m.fits = fitsInView(m, size[0], size[1]);
+    });
 }
 
+function inViewNow(m) {
+    return m.share > 0 || m.fits;
+}
+
+function earnsDot(m) {
+    return m.share > DOT_SHARE || m.fits;
+}
+
+// What to draw. For the chosen year, the newest year at or before it
+// with a dot, and every one of that year's mosaics in view, the
+// sharpest on top. Nothing older shows through: where that year has no
+// photograph, the map is charcoal.
 function stackFor(year) {
     if (year >= BASE.year) return [];
-    var open = samples.map(function () { return true; });
-    var left = samples.length;
-    var out = [];
-    var candidates = MOSAICS
-        .filter(function (m) { return m.year <= year; })
-        .sort(function (a, b) { return b.year - a.year || a.gsd - b.gsd; });
-    var newest = null; // the newest year with imagery in view keeps every mosaic
-    for (var i = 0; i < candidates.length && left > 0; i++) {
-        var m = candidates[i];
-        var hits = [];
-        samples.forEach(function (p, k) {
-            if (open[k] && covers(m, p)) hits.push(k);
-        });
-        if (hits.length === 0) continue;
-        if (newest === null) newest = m.year;
-        if (m.year !== newest && hits.length < MIN_SHARE * samples.length) continue;
-        hits.forEach(function (k) { open[k] = false; });
-        left -= hits.length;
-        out.push(m);
-    }
-    return out;
+    var earlier = litYears.filter(function (y) { return y <= year; });
+    if (!earlier.length) return [];
+    var shown = earlier[earlier.length - 1];
+    // MOSAICS is sorted sharpest first within a year: top first.
+    return MOSAICS.filter(function (m) { return m.year === shown && inViewNow(m); });
 }
 
 // A mosaic's source and layer are made the first time it is drawn, so
@@ -461,13 +467,7 @@ function fade(layer, opacity) {
 }
 
 // Layers joining the stack fade in, in stack order; layers leaving it
-// fade out. The newest year drawn, the top of the stack, is solid;
-// the older years showing through beneath it are faint, so they read
-// as stand-ins rather than the year on the map. The present day
-// shows only when it is the year chosen; under any other year the
-// street map shows through instead.
-var UNDER_OPACITY = 0.4;
-
+// fade out. The present day shows only when it is the year chosen.
 function drawStack() {
     var next = stackFor(activeYear);
     var leaving = stack.filter(function (m) { return next.indexOf(m) < 0; });
@@ -475,7 +475,7 @@ function drawStack() {
     next.slice().reverse().forEach(function (m) {
         ensureLayer(m);
         canberraMap.moveLayer(m.layerId);
-        fade(m, m.year === next[0].year ? 1 : UNDER_OPACITY);
+        fade(m, 1);
     });
     leaving.forEach(function (m) { fade(m, 0); });
     fade(BASE, activeYear >= BASE.year ? 1 : 0);
@@ -510,7 +510,7 @@ function renderCoarse() {
 // ------------------------------------------------------------------
 // Attribution, for only what is on screen: a link to the catalog
 // record of each mosaic drawn, GA's credit for the photographs, and
-// the present day or the street map wherever either shows.
+// the present day when it shows.
 // ------------------------------------------------------------------
 var attributionEl = document.getElementById('attribution');
 
@@ -522,17 +522,14 @@ function renderAttribution() {
         }).join(', ') + ' by hapmap, CC BY 4.0');
         parts.push(GA_CREDIT);
     }
-    if (activeYear >= BASE.year) {
-        parts.push(BASE.attribution);
-    } else if (samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); })) {
-        parts.push(BACKDROP.attribution);
-    }
+    if (activeYear >= BASE.year) parts.push(BASE.attribution);
     attributionEl.innerHTML = parts.join(' &middot; ');
 }
 
 // ------------------------------------------------------------------
 // Timeline. The handle can rest on any year; a dot marks each year
-// with imagery in view, and the dots follow the map as it moves.
+// with a mosaic that fills enough of the view (see earnsDot), and the
+// dots follow the map as it moves.
 // ------------------------------------------------------------------
 var TIMELINE_MIN = 1920;
 var TIMELINE_MAX = 2030;
@@ -597,14 +594,14 @@ function buildTimeline() {
     updateHandle(activeYear);
 }
 
-// A year keeps its dot while any of its mosaics has imagery in view.
-// The dot is grey when even the sharpest of them is coarser than the
-// screen, so zooming in past it would show only bigger pixels.
+// A year keeps its dot while one of its mosaics earns it. The dot is
+// grey when even the sharpest of those is coarser than the screen, so
+// zooming in past it would show only bigger pixels.
 function updateDots() {
-    var sharpest = new Map([[BASE.year, 0]]); // year -> finest gsd in view
+    var sharpest = new Map([[BASE.year, 0]]); // year -> finest gsd earning a dot
     MOSAICS.forEach(function (m) {
         if (sharpest.has(m.year) && sharpest.get(m.year) <= m.gsd) return;
-        if (samples.some(function (p) { return covers(m, p); })) sharpest.set(m.year, m.gsd);
+        if (earnsDot(m)) sharpest.set(m.year, m.gsd);
     });
     var mpp = metresPerPixel();
     dots.forEach(function (dot, year) {

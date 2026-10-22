@@ -19,8 +19,11 @@
     <style type="text/css">
         :root {
             --hap-navy: #16365c;
-            --hap-navy-light: #1f4d83;
-            --hap-accent: #f5a623;
+            --hap-accent: #e6198a; /* magenta */
+            --hap-charcoal: #2a2c2e; /* NO_DATA in src/main.js */
+            --hap-charcoal-light: #3a3d41;
+            --hap-ink-light: #d5d8dc;
+            --hap-ink-muted: #9aa0a7;
             --timeline-width: 86px;
         }
 
@@ -36,7 +39,7 @@
         }
 
         #map {
-            background: #0b1622;
+            background: var(--hap-charcoal);
         }
 
         /* ---- Search, at the top centre of the map ---- */
@@ -76,8 +79,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.25);
+            background: var(--hap-charcoal);
+            border-left: 1px solid var(--hap-charcoal-light);
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.4);
             user-select: none;
             -webkit-user-select: none;
         }
@@ -86,18 +90,18 @@
             margin: 12px 0 8px;
             width: 44px;
             height: 44px;
-            border: none;
+            border: 2px solid var(--hap-accent);
             border-radius: 50%;
-            background: var(--hap-navy);
-            color: #fff;
+            background: transparent;
+            color: var(--hap-accent);
             font-size: 16px;
             cursor: pointer;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
             flex: none;
         }
 
         #play-btn:hover {
-            background: var(--hap-navy-light);
+            background: var(--hap-accent);
+            color: #fff;
         }
 
         #track {
@@ -118,14 +122,14 @@
             left: 50%;
             width: 2px;
             margin-left: -1px;
-            background: #c3cbd6;
+            background: var(--hap-charcoal-light);
         }
 
         .tick {
             position: absolute;
             left: 50%;
             height: 1px;
-            background: #aab4c2;
+            background: #55595e;
             transform: translateX(-50%);
             width: 10px;
         }
@@ -133,7 +137,7 @@
         .tick.decade {
             width: 18px;
             height: 2px;
-            background: #6e7c8e;
+            background: #7d838a;
         }
 
         .tick-label {
@@ -141,7 +145,7 @@
             left: 6px;
             transform: translateY(-50%);
             font-size: 10px;
-            color: #54657c;
+            color: var(--hap-ink-muted);
         }
 
         /* Dots marking years with available imagery */
@@ -152,8 +156,7 @@
             height: 12px;
             border-radius: 50%;
             background: var(--hap-accent);
-            border: 2px solid #fff;
-            box-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--hap-charcoal);
             transform: translate(-50%, -50%);
             cursor: pointer;
             z-index: 2;
@@ -165,7 +168,7 @@
 
         /* A year whose sharpest imagery in view is coarser than the screen */
         .year-dot.coarse {
-            background: #a3adba;
+            background: #6e737a;
         }
 
         /* Draggable year handle */
@@ -173,7 +176,7 @@
             position: absolute;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: var(--hap-navy);
+            background: var(--hap-accent);
             color: #fff;
             font-size: 15px;
             font-weight: 700;
@@ -194,7 +197,7 @@
 
         /* Zoomed in past what the photographs on screen can show */
         #handle.coarse {
-            background: #6e7c8e;
+            background: #6e737a;
         }
 
         /* ---- Click popup: which photograph this spot came from ---- */
@@ -357,8 +360,8 @@
             border-top-left-radius: 4px;
             font-size: 11px;
             line-height: 1.5;
-            color: #1d2733;
-            background: rgba(255, 255, 255, 0.8);
+            color: var(--hap-ink-light);
+            background: rgba(42, 44, 46, 0.85);
         }
 
         #attribution a {
