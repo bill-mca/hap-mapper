@@ -14,8 +14,8 @@ maplibregl.setMaxParallelImageRequests(32);
 // Mercator mosaic served from this site is a layer, filed under the year
 // its flying started, unless /site.json leaves it out. `npm run build`
 // writes /site.json from layers.yaml, along with the present-day imagery
-// at the top of the timeline. A mosaic published to the catalog appears
-// on the next page load.
+// at the top of the timeline and the dark backdrop under it all. A mosaic
+// published to the catalog appears on the next page load.
 // ------------------------------------------------------------------
 var SITE_URL = 'https://hapmap.app';
 
@@ -215,10 +215,13 @@ var mosaicsLoaded = Promise.all([sitePromise, itemsPromise]).then(function (r) {
 // into a mosaic by the hapmap project, also CC BY 4.0.
 var GA_CREDIT = 'Photographs &copy; <a href="https://www.ga.gov.au/scientific-topics/national-location-information/historical-aerial-photography" target="_blank" rel="noopener">Geoscience Australia</a>, CC BY 4.0';
 
-// The present day, the newest year on the timeline, from /site.json.
+// The present day, the newest year on the timeline, and the dark map
+// under every year; both from /site.json.
 var BASE = { layerId: 'imagery-base', year: 2025, label: '2025' };
+var BACKDROP = null;
 
-// Wherever the year on screen has no photograph, the map is charcoal.
+// Wherever the year on screen has no photograph, the backdrop shows,
+// and charcoal where it has not loaded.
 var NO_DATA = '#2a2c2e';
 
 var MOSAICS = []; // every mosaic shown, oldest first
@@ -293,13 +296,21 @@ var geocoder = new MaplibreGeocoder(nominatim, {
 });
 document.getElementById('search').appendChild(geocoder.onAdd(canberraMap));
 
-// The present day goes in first, at the bottom; the mosaics are added
-// above it as they are first needed, and the timeline is built once
-// the catalog has been read.
+// The backdrop goes in first, at the bottom, then the present day
+// above it; the mosaics are added above both as they are first needed,
+// and the timeline is built once the catalog has been read.
 canberraMap.on('load', async function () {
     var SITE = await sitePromise;
     Object.assign(BASE, SITE.base, { label: String(SITE.base.year) });
+    BACKDROP = SITE.backdrop;
     activeYear = BASE.year;
+    canberraMap.addSource('backdrop', {
+        type: 'raster',
+        tiles: [BACKDROP.tiles],
+        tileSize: BACKDROP.tileSize,
+        maxzoom: BACKDROP.maxzoom
+    });
+    canberraMap.addLayer({ id: 'backdrop', type: 'raster', source: 'backdrop' });
     canberraMap.addSource(BASE.layerId, {
         type: 'raster',
         tiles: [BASE.tiles],
@@ -467,7 +478,9 @@ function fade(layer, opacity) {
 }
 
 // Layers joining the stack fade in, in stack order; layers leaving it
-// fade out. The present day shows only when it is the year chosen.
+// fade out. The present day shows only when it is the year chosen;
+// under any other year the backdrop shows wherever that year has no
+// photograph.
 function drawStack() {
     var next = stackFor(activeYear);
     var leaving = stack.filter(function (m) { return next.indexOf(m) < 0; });
@@ -510,7 +523,7 @@ function renderCoarse() {
 // ------------------------------------------------------------------
 // Attribution, for only what is on screen: a link to the catalog
 // record of each mosaic drawn, GA's credit for the photographs, and
-// the present day when it shows.
+// the present day or the backdrop wherever either shows.
 // ------------------------------------------------------------------
 var attributionEl = document.getElementById('attribution');
 
@@ -522,7 +535,11 @@ function renderAttribution() {
         }).join(', ') + ' by hapmap, CC BY 4.0');
         parts.push(GA_CREDIT);
     }
-    if (activeYear >= BASE.year) parts.push(BASE.attribution);
+    if (activeYear >= BASE.year) {
+        parts.push(BASE.attribution);
+    } else if (samples.some(function (p) { return !stack.some(function (m) { return covers(m, p); }); })) {
+        parts.push(BACKDROP.attribution);
+    }
     attributionEl.innerHTML = parts.join(' &middot; ');
 }
 

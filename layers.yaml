@@ -1,5 +1,5 @@
-# What hapmap.app leaves out of the hap-mosaics STAC catalog, and the
-# present-day imagery at the top of the timeline.
+# What hapmap.app leaves out of the hap-mosaics STAC catalog, the present-day
+# imagery at the top of the timeline, and the dark backdrop under it all.
 #
 # The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
 # published at https://hapmap.app/stac/): every Web Mercator mosaic served from
@@ -33,3 +33,12 @@ base:
   tileSize: 256
   maxzoom: 19
   attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+
+# Esri's dark grey canvas under every year, showing wherever the year on screen
+# has no photograph. It is not on the timeline.
+backdrop:
+  title: Esri World Dark Gray Base
+  tiles: https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}
+  tileSize: 256
+  maxzoom: 16
+  attribution: "Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community"

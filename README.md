@@ -6,7 +6,7 @@ Drag the year handle on the timeline, or press the play button, to travel throug
 The handle can rest on any year.
 A magenta dot marks each year with a mosaic that covers more than 30% of the view, or that fits wholly inside it, so the dots change as the map moves.
 The map shows the year of the handle's dot, or of the nearest dot below it, and every mosaic of that year in view, the sharpest on top.
-Nothing older shows through: wherever that year has no photograph, the map is charcoal.
+Nothing older shows through: wherever that year has no photograph, Esri's dark grey canvas shows instead.
 A dot turns grey when the map is zoomed in past that year's sharpest photographs in view, so that each of their pixels is wider than a pixel of the screen; the handle turns grey the same way for what is drawn.
 The present day, at the top of the timeline, is Esri World Imagery.
 The page is dark: a charcoal map and timeline, with magenta for the dots, the handle and the play button.
@@ -26,7 +26,8 @@ The credit line at the bottom names only what is on screen, with a link to each 
 - **The layers** come from the hap-mosaics STAC catalog (`claude-agent/hap-mosaics` on Gitea, `~/hap-mosaics` on hectar), published at `/stac/`.
   The page reads it in one request, from the Worker's `/web-items.json`, and walks `/stac/` itself only if that fails.
   Every Web Mercator mosaic served from hapmap.app is a layer, filed under the year its flying started, so a newly published mosaic appears on the next page load, with no deploy.
-- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, and the present-day layer.
+- **[`layers.yaml`](layers.yaml)** names the catalog items the site leaves out, the present-day layer, and the dark map underneath.
+  `npx vite` serves `/site.json` from it fresh, so a change shows on reload.
   It is what differs between production and dev.
 - **The page** is `index.html` and `src/`: `src/main.js` is the map and the timeline, and `src/cog.js` draws the COGs.
 - **The build**, `npm run build`, bundles the page with [Vite](https://vite.dev/) into `dist/`, turns `layers.yaml` into `dist/site.json`, and builds [STAC Browser](https://github.com/radiantearth/stac-browser) into `dist/browse/`.

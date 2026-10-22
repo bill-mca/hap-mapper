@@ -94,7 +94,8 @@ bilby's call (22 October 2026).
 
 - [x] A year has a dot only when one of its mosaics covers more than 30% of the view, or fits wholly inside it; the view is the map left of the timeline.
 - [x] Draw only the year of the dot at or below the handle: no older years showing through at 40%.
-- [x] No OpenStreetMap underneath: charcoal wherever the year on screen has no photograph.
+- [x] No OpenStreetMap underneath: Esri's Dark Gray Canvas instead, as Esri draws it, wherever the year on screen has no photograph. (CARTO's Dark Matter now needs an API key.)
+- [x] `npx vite` serves `/site.json` from this checkout's `layers.yaml`, rather than hapmap-dev's.
 - [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
 - [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
 - [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.
