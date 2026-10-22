@@ -39,7 +39,10 @@ async function main() {
     }));
     console.log(`site.json: ${exclude.length} items left out; base ${spec.base.year} ${spec.base.title}; backdrop ${spec.backdrop.title}`);
 
-    execFileSync(join(ROOT, 'scripts', 'build-browser.sh'), [join(DIST, 'browse')], { stdio: 'inherit' });
+    // Vite's build() set NODE_ENV=production in this process; left in place,
+    // it makes the browser's `npm ci` skip the devDependencies it builds with.
+    const { NODE_ENV, ...env } = process.env;
+    execFileSync(join(ROOT, 'scripts', 'build-browser.sh'), [join(DIST, 'browse')], { stdio: 'inherit', env });
     console.log(`wrote ${DIST}`);
 }
 
