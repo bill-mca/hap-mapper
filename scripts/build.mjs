@@ -4,9 +4,9 @@
 // geotiff.js from npm) into dist/ first; see vite.config.js.
 //
 // The page reads the hap-mosaics STAC catalog itself, in the browser, so the
-// build no longer touches it. It writes /site.json from layers.yaml: the
-// catalog items to leave out, the present-day imagery, and the street map
-// drawn underneath.
+// build no longer touches it. It writes /site.json from layers.yaml
+// (scripts/site.mjs): the catalog items to leave out, the present-day
+// imagery, and the dark backdrop.
 // Each Worker serves the settings it was deployed with, which is how the dev
 // and production sites can differ.
 //
@@ -15,31 +15,26 @@
 //     npm run deploy:dev       # build, then deploy to hapmap-dev
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
-import YAML from 'yaml';
+import { siteJson } from './site.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
 async function main() {
-    const spec = YAML.parse(readFileSync(join(ROOT, 'layers.yaml'), 'utf8'));
-    const exclude = spec.exclude || [];
-    if (!spec.base) throw new Error('layers.yaml: no base layer');
-    if (!spec.backdrop) throw new Error('layers.yaml: no backdrop');
+    const site = siteJson(ROOT); // fail before the slow part
 
     await build({ root: ROOT, logLevel: 'warn' }); // empties dist/ first
-    writeFileSync(join(DIST, 'site.json'), JSON.stringify({
-        built: new Date().toISOString(),
-        exclude,
-        base: spec.base,
-        backdrop: spec.backdrop,
-    }));
-    console.log(`site.json: ${exclude.length} items left out; base ${spec.base.year} ${spec.base.title}; backdrop ${spec.backdrop.title}`);
+    writeFileSync(join(DIST, 'site.json'), JSON.stringify(site));
+    console.log(`site.json: ${site.exclude.length} items left out; base ${site.base.year} ${site.base.title}; backdrop ${site.backdrop.title}`);
 
-    execFileSync(join(ROOT, 'scripts', 'build-browser.sh'), [join(DIST, 'browse')], { stdio: 'inherit' });
+    // Vite's build() set NODE_ENV=production in this process; left in place,
+    // it makes the browser's `npm ci` skip the devDependencies it builds with.
+    const { NODE_ENV, ...env } = process.env;
+    execFileSync(join(ROOT, 'scripts', 'build-browser.sh'), [join(DIST, 'browse')], { stdio: 'inherit', env });
     console.log(`wrote ${DIST}`);
 }
 

@@ -88,3 +88,26 @@ The diagnosis is in [docs/loading-performance.md](docs/loading-performance.md) (
 - [ ] Full-scan Blag Map runs of 1980 and 1974–75, for sharpness at street zoom.
 - [ ] The 1962–63, 1968, 1985, 1990 and 1992 sets, once Blag Map has run them.
 - [ ] Find out why `https://hapmap.app` resets connections from hectar while the `workers.dev` address works.
+
+## Dark mode, and dots that mean something
+
+bilby's call (22 October 2026).
+
+- [x] A year has a dot only when one of its mosaics covers more than 30% of the view, or fits wholly inside it; the view is the map left of the timeline.
+- [x] Draw only the year of the dot at or below the handle: no older years showing through at 40%.
+- [x] No OpenStreetMap underneath: Esri's Dark Gray Canvas instead, as Esri draws it, wherever the year on screen has no photograph. (CARTO's Dark Matter now needs an API key.)
+- [x] `npx vite` serves `/site.json` from this checkout's `layers.yaml`, rather than hapmap-dev's.
+- [x] A charcoal timeline with magenta dots, handle and play button; a charcoal credit line.
+- [ ] bilby: dark popups, photograph viewer and search box to match, if wanted.
+- [ ] bilby: the spec still names OSM as the default layer (`docs/specification.md`, Display), for bilby to update.
+
+## Place names from OpenStreetMap
+
+bilby's call (22 October 2026): labels everywhere, over a backdrop with no names of its own.
+
+- [x] OpenFreeMap vector tiles and fonts: suburbs, towns, streets (no paths or cycle routes), lakes and rivers, above every mosaic.
+- [x] An **Aa** button to hide them, remembered in the browser; OpenFreeMap and OpenStreetMap credited while they show.
+- [x] Esri's Dark Gray "Base" turned out to carry names of its own, so the backdrop is now drawn from the same OpenFreeMap tiles in Esri's greys, with none (`src/backdrop.js`).
+- [x] Time it against Esri's: a fifth fewer bytes and 241 fewer requests a session, no slower to draw ([docs/backdrop-performance.md](docs/backdrop-performance.md)).
+- [ ] Perhaps: fade the labels a little on older years, where today's names can sit over paddocks.
+- [ ] Perhaps: serve our own PMTiles cut of the region from R2, if OpenFreeMap proves slow or unreliable.

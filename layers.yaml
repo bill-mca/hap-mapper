@@ -1,5 +1,5 @@
 # What hapmap.app leaves out of the hap-mosaics STAC catalog, the present-day
-# imagery at the top of the timeline, and the street map underneath it all.
+# imagery at the top of the timeline, and the dark backdrop under it all.
 #
 # The page reads the catalog itself (claude-agent/hap-mosaics on Gitea,
 # published at https://hapmap.app/stac/): every Web Mercator mosaic served from
@@ -34,11 +34,11 @@ base:
   maxzoom: 19
   attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
 
-# The street map under every year, showing wherever the year on screen has no
-# imagery. It is not on the timeline.
+# The dark grey map under every year, showing wherever the year on screen has
+# no photograph, and the source of the place names over it: OpenStreetMap's
+# vector tiles from OpenFreeMap, drawn in grey by src/backdrop.js. It is not on
+# the timeline.
 backdrop:
-  title: OpenStreetMap
-  tiles: https://tile.openstreetmap.org/{z}/{x}/{y}.png
-  tileSize: 256
-  maxzoom: 19
-  attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
+  title: OpenFreeMap, in dark grey
+  url: https://tiles.openfreemap.org/planet
+  attribution: "<a href=\"https://openfreemap.org\" target=\"_blank\" rel=\"noopener\">OpenFreeMap</a> <a href=\"https://www.openmaptiles.org/\" target=\"_blank\" rel=\"noopener\">&copy; OpenMapTiles</a> Data from <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap</a>"
