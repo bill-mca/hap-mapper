@@ -30,6 +30,14 @@ function widths(stops) {
     return ['interpolate', ['exponential', 1.5], ['zoom']].concat(stops);
 }
 
+// A river's width, or a stream's: [zoom, river, stream] stops. MapLibre
+// allows one zoom curve per expression, so the choice goes inside it.
+function riverWidths(stops) {
+    return widths(stops.flatMap(function (s) {
+        return [s[0], ['match', ['get', 'class'], 'river', s[1], s[2]]];
+    }));
+}
+
 // Bottom to top. `source` is the id of the OpenMapTiles vector source.
 export function backdropLayers(source) {
     var layers = [
@@ -60,7 +68,7 @@ export function backdropLayers(source) {
             layout: LINES,
             paint: {
                 'line-color': WATER,
-                'line-width': ['match', ['get', 'class'], 'river', widths([10, 1, 18, 8]), widths([12, 0.5, 18, 3])]
+                'line-width': riverWidths([[10, 1, 0.25], [18, 8, 3]])
             }
         },
         {
