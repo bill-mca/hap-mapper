@@ -45,7 +45,8 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 - [ ] bilby: pick the Proof, Memory and Steel runs, and say whether current mosaics should beat benchmark runs of similar sharpness.
 - [ ] Cut unscanned holes out of the footprints in hap-mosaics, so older years show through them.
 - [ ] Cull tiles hidden under the layers above, once a culled tile can be reloaded when the stack changes.
-- [ ] Promote to production: a pull request from `dev` into `main` (Gitea PR #2, opened 19 October 2026), then `npm run deploy`.
+- [x] Promote to production: Gitea PR #2 merged, and `main` deployed by hand to `hapmap` (version 4409e8bf, 19 October 2026).
+- [ ] Fix the Workers Builds auto-deploy from GitHub `main`: build 671e78a9 failed, probably for want of `npm run build` as its build command.
 
 ## The spec-candidate features, on dev
 
@@ -63,6 +64,22 @@ Ported by hand from `candidate/spec-pass` onto the stacked timeline (19 October 
 - [x] Draw the older years showing through at 40% opacity, so the newest year drawn reads as the main layer.
 - [ ] bilby: the favicon.
 - [x] The spec's unobtrusive loading cue: a small spinner in the middle of the map while tiles, the catalog, a search or a photograph are loading.
+
+## Imagery that loads quickly
+
+The diagnosis is in [docs/loading-performance.md](docs/loading-performance.md) (21 October 2026).
+
+- [x] Measure where the time goes when the year changes or the map moves.
+- [x] Stop Chrome queueing COG range reads: a URL per range, in `src/cog.js` (21 October 2026).
+- [x] Our own COG reader, `src/cog.js`: a shared block cache, 64 kB header reads, workers, full-resolution 512 px tiles, and aborts.
+- [x] Read the headers of the mosaics in view in the background once the map is idle.
+- [x] Create the map before awaiting anything; preload `/site.json` and the catalog index.
+- [x] Worker: keep ranges in memory and the edge cache, cacheable for a day; serve `/web-items.json`.
+- [x] WebP web copies of all 33 mosaics under `web/` (`scripts/web-cogs.py`), on their own grids rather than `GoogleMapsCompatible`, which would resample them again.
+- [x] Build the page with Vite and serve its scripts from the Worker.
+- [x] Deploy to `hapmap-dev` (version 952debd5) and measure: year changes 4.6–5.4 s to 1.3 s.
+- [ ] Make a web copy whenever a mosaic is published: fold `scripts/web-cogs.py` into hap-mosaics' `publish.py`, or run it after.
+- [ ] Promote to production, where the edge cache can work.
 
 ## Later
 

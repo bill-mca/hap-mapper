@@ -154,3 +154,6 @@ wrangler.dev.jsonc
 
 # The built site (npm run build) and its caches
 dist/
+
+# Python bytecode
+__pycache__/
