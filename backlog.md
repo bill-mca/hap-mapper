@@ -108,3 +108,11 @@ bilby's call (22 October 2026): labels everywhere, since the backdrop is Esri's 
 - [x] An **Aa** button to hide them, remembered in the browser; OpenFreeMap and OpenStreetMap credited while they show.
 - [ ] Perhaps: fade the labels a little on older years, where today's names can sit over paddocks.
 - [ ] Perhaps: serve our own PMTiles cut of the region from R2, if OpenFreeMap proves slow or unreliable.
+
+## A hybrid map of the past
+
+bilby's call (22 October 2026), on branch `feat/hybrid-overlay`.
+
+- [x] A roads button under **Aa** lays today's roads, rail, building footprints, lakes and rivers from OpenFreeMap over the year's photographs, light and semi-transparent; off by default, remembered in the browser.
+- [x] The mosaics go in beneath the overlay, and the labels stay on top of it.
+- [ ] bilby: try it on hapmap-dev and tune the colours and opacities in `src/vector-map.js`.

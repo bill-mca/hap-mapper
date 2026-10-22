@@ -15,8 +15,10 @@ There is no title card or layer panel: the map is the interface.
 A small spinner in the middle of the map turns while anything is loading.
 The search box at the top finds a present-day place through Nominatim, using MapLibre's geocoder plugin, and flies the map there.
 Today's place, street and water names from OpenStreetMap are written over every year, from OpenFreeMap's vector tiles: light text in a dark halo, so it reads over any photograph.
-The dark grey map comes from the same tiles, drawn by [`src/backdrop.js`](src/backdrop.js) in the greys of Esri's Dark Gray Canvas, which it replaced; it draws no names, so the labels are the only ones on the map.
+The dark grey map comes from the same tiles, drawn by [`src/vector-map.js`](src/vector-map.js) in the greys of Esri's Dark Gray Canvas, which it replaced; it draws no names, so the labels are the only ones on the map.
 The **Aa** button under the zoom buttons hides them, and the page remembers the choice.
+The roads button below it lays today's roads, rail, building footprints, lakes and rivers over the year's photographs, light and semi-transparent so the photograph shows through; with the labels on too, it makes a hybrid map of the past.
+It starts off, and the page remembers it too.
 
 Click the map to see which photograph that spot came from and the day it was flown.
 "View photograph" opens GA's preview of it, with a link to download the full scan; clicking the preview opens it in a new tab.
