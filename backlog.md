@@ -46,7 +46,8 @@ The design is in [docs/timeline-plan.md](docs/timeline-plan.md); three questions
 - [ ] Cut unscanned holes out of the footprints in hap-mosaics, so older years show through them.
 - [ ] Cull tiles hidden under the layers above, once a culled tile can be reloaded when the stack changes.
 - [x] Promote to production: Gitea PR #2 merged, and `main` deployed by hand to `hapmap` (version 4409e8bf, 19 October 2026).
-- [ ] Fix the Workers Builds auto-deploy from GitHub `main`: build 671e78a9 failed, probably for want of `npm run build` as its build command.
+- [ ] Fix the Workers Builds auto-deploy from GitHub `main`: build 671e78a9 failed for want of `npm run build` as its build command (reproduced from a clean checkout: `dist/` does not exist). A clean build also failed at STAC Browser under Vite's `NODE_ENV=production`; fixed in Gitea PR #5.
+  - [ ] bilby: set the build command to `npm run build` in the dashboard (Workers → hapmap → Settings → Build) before `main` next goes to GitHub.
 
 ## The spec-candidate features, on dev
 
